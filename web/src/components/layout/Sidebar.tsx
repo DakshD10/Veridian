@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   FlaskConical,
@@ -25,7 +26,7 @@ export function Sidebar() {
     <div className="flex flex-col w-52 h-full bg-linear-to-b from-[#09090B] to-[#0D0D10] border-r border-[#1F1F23]">
 
       {/* Nav Items */}
-      <div className="flex-1 py-4 px-2 flex flex-col gap-1">
+      <div className="flex-1 py-4 px-2 flex flex-col gap-1 relative">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           // Dashboard gets an exact match, others get startsWith match
@@ -37,14 +38,27 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 h-9 px-3 rounded-md font-medium text-sm transition-colors border-l-2 ${
+              className={`relative flex items-center gap-3 h-9 px-3 rounded-md font-medium text-sm transition-colors border-l-2 ${
                 isActive
-                  ? "bg-violet-500/12 border-violet-500 text-[#FAFAFA]"
-                  : "border-transparent text-[#71717A] hover:bg-[#18181B] hover:text-[#A1A1AA]"
+                  ? "text-[#FAFAFA] border-l-2 border-solid border-violet-500 -ml-px rounded-l-none"
+                  : "text-[#71717A] hover:bg-[#18181B] hover:text-[#A1A1AA]"
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-violet-500" : "text-[#71717A]"}`} />
-              {item.name}
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-active-pill"
+                  className="absolute inset-0 bg-violet-500/[0.12] rounded-md -ml-[2px]"
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 35,
+                  }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-3 w-full">
+                <Icon className={`w-4 h-4 ${isActive ? "text-violet-500" : "text-[#71717A]"}`} />
+                {item.name}
+              </span>
             </Link>
           );
         })}

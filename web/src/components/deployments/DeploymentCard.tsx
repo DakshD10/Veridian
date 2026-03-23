@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Bot, Clock, CheckCircle2, ArrowLeftRight } from "lucide-react";
+import { motion } from "framer-motion";
 import { ThresholdGauge } from "./ThresholdGauge";
 import { SimulateModal } from "./SimulateModal";
 import { useRouter } from "next/navigation";
@@ -21,9 +22,10 @@ type DeploymentCardData = WatchedDeployment & {
   }>;
 };
 
-export function DeploymentCard({ deployment, isDetail = false }: { deployment: DeploymentCardData; isDetail?: boolean }) {
+export function DeploymentCard({ deployment, isDetail = false, index = 0 }: { deployment: DeploymentCardData; isDetail?: boolean; index?: number }) {
   const [modalOpen, setModalOpen] = useState(false);
   const router = useRouter();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const latestAgentRun = deployment.agentRuns?.[0];
   const qualityScore = latestAgentRun?.newScore ?? 0;
   const isActive = deployment.isActive;
@@ -52,15 +54,34 @@ export function DeploymentCard({ deployment, isDetail = false }: { deployment: D
 
   return (
     <>
-      <div 
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, root: scrollContainerRef, margin: "-40px" }}
+        transition={{ duration: 0.4, delay: index * 0.06 }}
+        whileHover={{ 
+          y: -2, 
+          border: "1px solid rgba(139,92,246,0.3)",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.4)"
+        }}
         onClick={handleClick}
-        className={`bg-[#111113] border border-[#1F1F23] rounded-xl p-6 border-l-[3px] border-l-[#22C55E] group ${!isDetail ? 'cursor-pointer hover:bg-[#151518]' : ''} transition-all duration-300 w-full`}
+        className={`bg-[#111113] border border-[#1F1F23] rounded-xl p-6 border-l-[3px] border-l-[#22C55E] group ${!isDetail ? 'cursor-pointer' : ''} transition-all duration-300 w-full`}
       >
          <div className="flex justify-between items-start mb-6">
             <div className="space-y-1">
                <div className="flex items-center gap-3">
                   <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusTint}`}>
-                     <div className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-[#22C55E] animate-pulse" : "bg-[#A1A1AA]"}`}></div>
+                     <div className="relative w-1.5 h-1.5">
+                        {/* Inner solid dot */}
+                        <div className={`absolute inset-0 rounded-full ${isActive ? "bg-[#22C55E]" : "bg-[#A1A1AA]"}`} />
+                        {/* Outer pulsing ring */}
+                        {isActive && (
+                          <div
+                            className="absolute inset-0 rounded-full bg-[#22C55E] animate-[watchPulse_2s_ease-out_infinite]"
+                            style={{ transformOrigin: "center" }}
+                          />
+                        )}
+                     </div>
                      <span className="text-[11px] font-bold tracking-widest uppercase">{statusLabel}</span>
                   </div>
                   <span className="text-[13px] font-mono text-[#71717A]">{deployment.currentModel}</span>
@@ -70,7 +91,7 @@ export function DeploymentCard({ deployment, isDetail = false }: { deployment: D
             </div>
             <button 
               onClick={(e) => { e.stopPropagation(); setModalOpen(true); }}
-              className="px-4 py-2 border border-[#EF4444]/60 bg-[#EF4444]/5 hover:bg-[#EF4444]/10 text-[#EF4444] text-[13px] font-medium rounded-lg transition-colors flex items-center gap-2 cursor-pointer z-10"
+              className="px-4 py-2 border border-red-500/60 text-red-400 hover:border-red-500 hover:text-red-300 transition-colors text-[13px] font-medium rounded-lg flex items-center gap-2 cursor-pointer z-10"
             >
               <ArrowLeftRight className="w-[18px] h-[18px]" strokeWidth={2} />
               Simulate Version Change
@@ -137,7 +158,7 @@ export function DeploymentCard({ deployment, isDetail = false }: { deployment: D
               )}
             </div>
          </div>
-      </div>
+      </motion.div>
 
       <SimulateModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </>

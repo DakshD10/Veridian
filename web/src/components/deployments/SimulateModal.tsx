@@ -16,7 +16,7 @@ export function SimulateModal({ open, onClose }: { open: boolean, onClose: () =>
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+       <div className="absolute inset-0 bg-black/60" style={{ backdropFilter: "blur(4px)" }} onClick={onClose} />
        
        <div className="relative bg-[#09090B] border border-[#1F1F23] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex justify-between items-center mb-6">

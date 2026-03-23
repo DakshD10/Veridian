@@ -23,9 +23,9 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   const isRunning = status.toUpperCase() === "RUNNING";
 
   return (
-    <div className={`inline-flex items-center gap-2 px-2.5 py-0.75 rounded border text-[12px] font-mono ${getStatusStyles(status)}`}>
+    <div className={`inline-flex items-center gap-2 px-2.5 py-[3px] rounded border text-[12px] font-mono ${getStatusStyles(status)}`}>
       {isRunning && (
-        <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+        <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
       )}
       {status}
     </div>

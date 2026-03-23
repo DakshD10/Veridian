@@ -2,9 +2,12 @@
 
 import { useRuns } from "@/hooks/useRuns";
 import { useRouter } from "next/navigation";
-import { Bot } from "lucide-react";
+import { Bot, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import type { EvalRun } from "@/types";
+import { motion } from "framer-motion";
+import { useState, useRef } from "react";
+import { PageLayout } from "@/components/layout/PageLayout";
 
 type RunListItem = EvalRun & {
   overallScore: number | null;
@@ -14,6 +17,8 @@ type RunListItem = EvalRun & {
 export default function RunsPage() {
   const { data, isLoading, isError } = useRuns();
   const router = useRouter();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const runs = (data ?? []) as RunListItem[];
   const completedRuns = runs.filter((run) => run.status === "COMPLETED");
   const totalCases = runs.reduce((sum, run) => sum + (run.passedCount + run.failedCount), 0);
@@ -27,15 +32,15 @@ export default function RunsPage() {
 
   const getDomainBadge = (domain: string) => {
     switch(domain) {
-      case "healthcare": return "bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20";
-      case "bfsi": return "bg-[#EAB308]/10 text-[#EAB308] border border-[#EAB308]/20";
-      case "hiring": return "bg-[#3B82F6]/10 text-[#3B82F6] border border-[#3B82F6]/20";
-      default: return "bg-[#71717A]/10 text-[#71717A] border border-[#71717A]/20";
+      case "healthcare": return "bg-blue-950/60 text-blue-400 border border-blue-900";
+      case "bfsi": return "bg-amber-950/60 text-amber-400 border border-amber-900";
+      case "hiring": return "bg-violet-950/60 text-violet-400 border border-violet-900";
+      default: return "bg-[#1F1F23] text-[#71717A] border border-[#27272A]";
     }
   };
 
-  const renderScoreBlock = (score: number | null, delta: number | null) => {
-    if (score === null) return <span className="text-[#3F3F46] font-mono font-bold text-[14px]">—</span>;
+  const renderScoreBlock = (score: number | null, delta: number | null, index: number) => {
+    if (score === null) return <span className="text-[#3F3F46] font-mono">—</span>;
 
     let tintClass = "";
     if (score >= 0.75) tintClass = "bg-[rgba(34,197,94,0.12)] text-[#22C55E]";
@@ -43,8 +48,8 @@ export default function RunsPage() {
     else tintClass = "bg-[rgba(239,68,68,0.12)] text-[#EF4444]";
 
     return (
-      <div className={`rounded px-3 py-1.5 inline-flex flex-col items-center w-[80px] ${tintClass}`}>
-        <span className="font-mono font-bold text-[14px] leading-none">{score.toFixed(2)}</span>
+      <div className={`rounded-md px-3 py-1.5 inline-flex flex-col items-center w-[80px] ${tintClass}`}>
+        <span className="font-mono font-bold text-[16px] leading-none">{score.toFixed(2)}</span>
         <div className="flex w-full items-center justify-center min-h-[14px]">
           {delta !== null && (
             <span className={`font-mono text-[11px] leading-none mt-0.5 ${delta >= 0 ? "text-[#22C55E]" : "text-[#EF4444]"}`}>
@@ -53,7 +58,12 @@ export default function RunsPage() {
           )}
         </div>
         <div className="w-full h-[3px] bg-[#1F1F23]/50 rounded mt-1 overflow-hidden">
-          <div className="h-full bg-current rounded" style={{ width: `${score * 100}%` }} />
+          <motion.div 
+            className="h-full bg-current rounded" 
+            initial={{ width: "0%" }}
+            animate={{ width: `${score * 100}%` }}
+            transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1], delay: index * 0.04 + 0.2 }}
+          />
         </div>
       </div>
     );
@@ -63,14 +73,15 @@ export default function RunsPage() {
     switch (status) {
       case "COMPLETED":
         return (
-          <div className="bg-[rgba(34,197,94,0.1)] text-[#22C55E] rounded px-2 py-1 font-mono text-[12px] inline-flex items-center gap-1.5 w-max">
-             <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" /> Completed
+          <div className="bg-green-950/60 text-green-400 border border-green-900 font-mono text-[11px] px-2.5 py-[3px] rounded">
+            Completed
           </div>
         );
       case "RUNNING":
         return (
-          <div className="bg-[rgba(245,158,11,0.1)] text-[#F59E0B] rounded px-2 py-1 font-mono text-[12px] inline-flex items-center gap-1.5 w-max">
-             <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse" /> Running
+          <div className="bg-violet-950/60 text-violet-400 border border-violet-900 font-mono text-[11px] px-2.5 py-[3px] rounded inline-flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+            Running
           </div>
         );
       case "PENDING":
@@ -81,50 +92,53 @@ export default function RunsPage() {
         );
       case "FAILED":
         return (
-          <div className="bg-[rgba(239,68,68,0.1)] text-[#EF4444] rounded px-2 py-1 font-mono text-[12px] inline-flex items-center gap-1.5 w-max">
-             ✕ Failed
+          <div className="bg-red-950/60 text-red-400 border border-red-900 font-mono text-[11px] px-2.5 py-[3px] rounded">
+            × Failed
           </div>
         );
     }
   };
 
-  const chips = ["All Suites ▾", "All Models ▾", "All Status ▾", "Last 30 days ▾"];
+  const handleCopyId = async (fullId: string) => {
+    await navigator.clipboard.writeText(fullId);
+    setCopiedId(fullId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const truncateId = (id: string) => {
+    return `#${id.substring(0, 8)}...`;
+  };
+
+  const chips = ["All Suites", "All Models", "All Status", "Last 30 days"];
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading runs...</div>;
   if (isError) return <div className="p-8 text-center text-destructive">Failed to load runs.</div>;
   if (runs.length === 0) return <div className="p-8 text-center text-muted-foreground">No runs yet.</div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#09090B] w-full p-8">
-      {/* Top Layout */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="font-sans text-[20px] font-bold text-[#FAFAFA]">Run History</h1>
-          <p className="font-sans text-[14px] text-[#71717A] mt-1">
-            {`${runs.length} run${runs.length !== 1 ? "s" : ""} across ${suiteCount} suite${suiteCount !== 1 ? "s" : ""}`}
-          </p>
-        </div>
-        <Link 
-          href="/suites"
-          className="bg-[#8B5CF6] text-white rounded-lg px-4 py-2 font-sans font-medium text-[14px] hover:bg-violet-600 transition-colors cursor-pointer"
-        >
-          + New Evaluation
-        </Link>
-      </div>
-
+    <PageLayout 
+      title="Run History"
+      subtitle={`${runs.length} run${runs.length !== 1 ? "s" : ""} across ${suiteCount} suite${suiteCount !== 1 ? "s" : ""}`}
+      actionButton={{ href: "/suites", label: "New Evaluation" }}
+      stats={[
+        { label: "TOTAL CASES", value: totalCases },
+        { label: "PASS RATE", value: `${passRate.toFixed(1)}%`, color: "text-[#22C55E]" },
+        { label: "AVG SCORE", value: avgScore.toFixed(2) },
+        { label: "SUCCESS RATE", value: `${successRate.toFixed(1)}%`, color: "text-[#22C55E]" }
+      ]}
+    >
       {/* FILTER CHIPS ROW */}
-      <div className="flex justify-between items-center mt-6 mb-4">
+      <div className="flex justify-between items-center mb-6">
         <div className="flex gap-2">
           {chips.map((chip, idx) => (
             <div 
               key={chip} 
-              className={`rounded px-3 py-1.5 font-sans font-medium text-[13px] border cursor-pointer transition-colors ${
-                idx === 0 
-                  ? "bg-[rgba(139,92,246,0.12)] border-[#8B5CF6] text-[#8B5CF6]" 
-                  : "bg-[#18181B] border-[#27272A] text-[#A1A1AA] hover:border-[#3F3F46]"
+              className={`bg-[#111113] border border-[#27272A] text-[#A1A1AA] text-sm px-3 py-1.5 rounded-md hover:border-[#3F3F46] hover:text-[#FAFAFA] transition-colors inline-flex items-center gap-1 cursor-pointer ${
+                idx === 0 ? "border-violet-500/50 text-violet-400" : ""
               }`}
             >
               {chip}
+              <ChevronDown size={12} className="text-[#52525B]" />
             </div>
           ))}
         </div>
@@ -132,79 +146,98 @@ export default function RunsPage() {
       </div>
 
       {/* RUNS TABLE */}
-      <div className="w-full bg-[#111113] border border-[#1F1F23] rounded-lg overflow-hidden flex flex-col">
-        <div className="bg-[#18181B] border-b border-[#1F1F23] px-6 py-3 grid grid-cols-[100px_1fr_180px_140px_120px_80px] gap-4 items-center">
-          {["RUN ID", "SUITE", "MODEL", "SCORE", "STATUS", "DATE"].map((col) => (
-            <span key={col} className="font-sans font-medium text-[11px] text-[#52525B] uppercase tracking-wider">{col}</span>
-          ))}
-        </div>
-
-        <div className="flex flex-col">
-          {runs.map((run) => {
+      <div className="w-full bg-[#111113] border border-[#1F1F23] rounded-lg overflow-hidden">
+        <table className="table-fixed w-full">
+          <thead>
+            <tr className="border-b border-[#1F1F23]">
+              <th className="w-[180px] min-w-[180px] py-0 pb-3 text-[11px] font-mono text-[#52525B] uppercase tracking-widest text-left px-6">RUN ID</th>
+              <th className="w-[260px] py-0 pb-3 text-[11px] font-mono text-[#52525B] uppercase tracking-widest text-left px-6">SUITE</th>
+              <th className="w-[200px] py-0 pb-3 text-[11px] font-mono text-[#52525B] uppercase tracking-widest text-left px-6">MODEL</th>
+              <th className="w-[120px] py-0 pb-3 text-[11px] font-mono text-[#52525B] uppercase tracking-widest text-center px-6">SCORE</th>
+              <th className="w-[140px] py-0 pb-3 text-[11px] font-mono text-[#52525B] uppercase tracking-widest text-center px-6">STATUS</th>
+              <th className="w-[120px] py-0 pb-3 text-[11px] font-mono text-[#52525B] uppercase tracking-widest text-right px-6">DATE</th>
+            </tr>
+          </thead>
+          <tbody>
+          {runs.map((run, index) => {
             const isRunning = run.status === "RUNNING";
             const suiteName = run.suite?.name ?? run.suiteId;
             const modelVersion = run.modelVersion ?? "default";
-            const formattedDate = new Date(run.createdAt).toLocaleDateString();
+            const formattedDate = new Date(run.createdAt).toLocaleDateString("en-US", { 
+              month: "short", 
+              day: "numeric", 
+              year: "numeric" 
+            });
+            const fullId = `#${run.id}`;
+            const truncatedId = truncateId(run.id);
+            const isCopied = copiedId === fullId;
 
             return (
-              <div
+              <motion.tr
                 key={run.id}
+                initial={{ opacity: 0, x: -6 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, root: scrollContainerRef, margin: "-40px" }}
+                transition={{ duration: 0.25, delay: index * 0.04 }}
                 onClick={() => router.push(`/runs/${run.id}`)}
-                className={`px-6 py-4 border-b border-[#1F1F23] last:border-0 grid grid-cols-[100px_1fr_180px_140px_120px_80px] gap-4 items-center hover:bg-[#18181B] cursor-pointer transition-colors ${
+                className={`h-16 border-b border-[#1F1F23] hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer ${
                   isRunning ? "border border-t border-b border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.03)]" : ""
                 }`}
               >
-                <div className="font-mono text-[13px] text-[#8B5CF6]">#{run.id}</div>
+                <td className="px-6 py-0">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="font-mono text-xs text-violet-400 cursor-pointer hover:text-violet-300 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyId(fullId);
+                      }}
+                      title={fullId}
+                    >
+                      {truncatedId}
+                    </div>
+                    {isCopied && (
+                      <span className="text-xs text-green-400 font-mono">Copied</span>
+                    )}
+                  </div>
+                </td>
 
-                <div className="flex flex-col items-start gap-1 justify-center min-w-0">
-                  <span className="font-sans text-[14px] text-[#FAFAFA] truncate w-full">{suiteName}</span>
-                  <span className={`font-sans text-[10px] uppercase font-medium px-1.5 py-0.5 rounded leading-none ${getDomainBadge("default")}`}>
-                    SUITE
-                  </span>
-                </div>
+                <td className="px-6 py-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans text-sm text-[#FAFAFA] truncate">{suiteName}</span>
+                    <span className={`font-sans text-[11px] font-medium uppercase tracking-wide px-2 py-[3px] rounded ${getDomainBadge("default")}`}>
+                      SUITE
+                    </span>
+                  </div>
+                </td>
 
-                <div className="flex flex-col items-start justify-center min-w-0">
-                  <span className="font-mono text-[13px] text-[#A1A1AA] truncate w-full">{run.modelId}</span>
-                  <span className="font-sans text-[10px] text-[#52525B] mt-0.5">{modelVersion}</span>
-                </div>
+                <td className="px-6 py-0">
+                  <div className="flex flex-col">
+                    <span className="font-mono text-sm text-[#FAFAFA]">{run.modelId}</span>
+                    <span className="font-mono text-[11px] text-[#52525B]">{modelVersion}</span>
+                  </div>
+                </td>
 
-                <div>
-                  {renderScoreBlock(run.overallScore, null)}
-                </div>
+                <td className="px-6 py-0 text-center">
+                  {renderScoreBlock(run.overallScore, null, index)}
+                </td>
 
-                <div>
+                <td className="px-6 py-0 text-center">
                   {renderStatus(run.status)}
-                </div>
+                </td>
 
-                <div className="font-sans text-[13px] text-[#52525B] flex items-center">
-                  {run.triggeredBy === "agent" && <Bot className="w-3 h-3 mr-1.5 text-[#52525B]" />}
-                  <span className="font-mono">{formattedDate}</span>
-                </div>
-              </div>
+                <td className="px-6 py-0 text-right">
+                  <div className="flex items-center justify-end">
+                    {run.triggeredBy === "agent" && <Bot className="w-3 h-3 mr-1.5 text-[#52525B]" />}
+                    <span className="text-[#71717A] text-sm font-mono">{formattedDate}</span>
+                  </div>
+                </td>
+              </motion.tr>
             );
           })}
-        </div>
+        </tbody>
+      </table>
       </div>
-
-      {/* BOTTOM STATS BAR */}
-      <div className="mt-4 grid grid-cols-4 gap-4 pb-8 w-full">
-        <div className="bg-[#111113] border border-[#1F1F23] rounded-lg px-6 py-4 flex flex-col justify-center">
-          <span className="font-sans text-[12px] text-[#52525B] uppercase tracking-wide">TOTAL CASES EVALUATED</span>
-          <span className="font-mono font-bold text-[20px] text-[#FAFAFA] mt-1">{totalCases}</span>
-        </div>
-        <div className="bg-[#111113] border border-[#1F1F23] rounded-lg px-6 py-4 flex flex-col justify-center">
-          <span className="font-sans text-[12px] text-[#52525B] uppercase tracking-wide">PASS RATE</span>
-          <span className="font-mono font-bold text-[20px] text-[#22C55E] mt-1">{passRate.toFixed(1)}%</span>
-        </div>
-        <div className="bg-[#111113] border border-[#1F1F23] rounded-lg px-6 py-4 flex flex-col justify-center">
-          <span className="font-sans text-[12px] text-[#52525B] uppercase tracking-wide">AVG. SCORE</span>
-          <span className="font-mono font-bold text-[20px] text-[#FAFAFA] mt-1">{avgScore.toFixed(2)}</span>
-        </div>
-        <div className="bg-[#111113] border border-[#1F1F23] rounded-lg px-6 py-4 flex flex-col justify-center">
-          <span className="font-sans text-[12px] text-[#52525B] uppercase tracking-wide">SUCCESS RATE</span>
-          <span className="font-mono font-bold text-[20px] text-[#22C55E] mt-1">{successRate.toFixed(1)}%</span>
-        </div>
-      </div>
-    </div>
+    </PageLayout>
   );
 }

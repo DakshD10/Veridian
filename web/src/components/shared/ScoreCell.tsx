@@ -1,9 +1,14 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 interface ScoreCellProps {
   score: number;
   previousScore?: number;
+  index?: number;
 }
 
-export function ScoreCell({ score, previousScore }: ScoreCellProps) {
+export function ScoreCell({ score, previousScore, index = 0 }: ScoreCellProps) {
   const getScoreColor = (score: number) => {
     if (score >= 0.75) {
       return "bg-green-950/40 text-green-500";
@@ -29,23 +34,34 @@ export function ScoreCell({ score, previousScore }: ScoreCellProps) {
   const deltaPrefix = delta !== null && delta > 0 ? "+" : "";
 
   return (
-    <div className={`p-2 rounded ${getScoreColor(score)}`}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.07, ease: "easeOut" }}
+      className={`p-2 rounded ${getScoreColor(score)}`}
+    >
       <div className="font-mono font-bold text-sm">
         {(score * 100).toFixed(1)}%
       </div>
-      
+
       {previousScore !== undefined && delta !== null && (
         <div className={`text-[11px] font-mono ${deltaColor} mt-1`}>
           {deltaPrefix}{(delta * 100).toFixed(1)}%
         </div>
       )}
-      
-      <div className="mt-2 h-0.75 rounded-full bg-[#1F1F23] overflow-hidden">
-        <div 
-          className={`h-full ${getBarColor(score)} transition-all duration-700`}
-          style={{ width: `${score * 100}%` }}
+
+      <div className="mt-2 bg-[#1F1F23] rounded-full h-[6px] overflow-hidden">
+        <motion.div
+          className={`h-full ${getBarColor(score)}`}
+          initial={{ width: "0%" }}
+          animate={{ width: `${score * 100}%` }}
+          transition={{
+            duration: 0.9,
+            ease: [0.25, 1, 0.5, 1],
+            delay: index * 0.07 + 0.35,
+          }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 }

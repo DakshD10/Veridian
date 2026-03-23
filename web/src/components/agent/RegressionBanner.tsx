@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 export function LiveTimer({ isRunning }: { isRunning: boolean }) {
   const [seconds, setSeconds] = useState(0);
@@ -26,7 +27,13 @@ export function RegressionBanner({ regressionFound, previousScore, newScore, sui
   if (!regressionFound) return null;
 
   return (
-      <div className="w-full z-20 h-[52px] flex items-center justify-between px-8 border-b border-solid border-[rgba(239,68,68,0.3)] animate-pulse transition-all duration-1000" style={{ background: "linear-gradient(135deg, #450A0A 0%, #3F0A0A 100%)" }}>
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 52, opacity: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="w-full z-20 overflow-hidden"
+    >
+      <div className="h-[52px] flex items-center justify-between px-8 border-b border-solid border-[rgba(239,68,68,0.3)] transition-all duration-1000" style={{ background: "linear-gradient(135deg, #450A0A 0%, #3F0A0A 100%)", animation: "regressionPulse 3s ease-in-out infinite" }}>
          <div className="flex items-center gap-3">
             <AlertTriangle className="w-[16px] h-[16px] text-[#EF4444]" />
             <span className="font-sans font-bold text-[13px] text-[#FCA5A5] uppercase tracking-wide">REGRESSION DETECTED</span>
@@ -45,5 +52,6 @@ export function RegressionBanner({ regressionFound, previousScore, newScore, sui
             View Report →
          </span>
       </div>
-    );
+    </motion.div>
+  );
 }

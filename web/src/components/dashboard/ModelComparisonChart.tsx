@@ -11,18 +11,18 @@ export interface ModelDataPoint {
 const renderCustomAxisTick = ({ y, payload }: { y?: number; payload?: { value: string } }) => {
   return (
     <g transform={`translate(0,${y})`}>
-      <text x={0} y={0} dy={4} textAnchor="start" fill="#A1A1AA" fontSize={12} className="font-mono">
+      <text x={0} y={0} dy={4} textAnchor="start" fill="#71717A" fontSize={11} className="font-mono">
         {payload?.value}
       </text>
     </g>
   );
 };
 
-const renderCustomBarLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number | string }) => {
-  const { x = 0, y = 0, width = 0, height = 0, value } = props;
+const renderCustomBarLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number | string; fill?: string }) => {
+  const { x = 0, y = 0, width = 0, height = 0, value, fill } = props;
   // Position outside the bar on the right
   return (
-    <text x={x + width + 10} y={y + height / 2 + 5} fill="#FAFAFA" fontSize={14} fontWeight={700} className="font-mono" textAnchor="start">
+    <text x={x + width + 10} y={y + height / 2 + 5} fill={fill || "#FAFAFA"} fontSize={12} fontWeight={700} className="font-mono" textAnchor="start">
       {value}
     </text>
   );
@@ -42,7 +42,7 @@ export function ModelComparisonChart({ data }: { data: ModelDataPoint[] }) {
       <h3 className="font-sans font-semibold text-sm text-[#FAFAFA]">Model Comparison</h3>
       <div className="h-[200px] w-full mt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }} barSize={32}>
+          <BarChart data={data} layout="vertical" margin={{ top: 10, right: 20, left: 120, bottom: 10 }} barSize={32}>
             <XAxis type="number" hide domain={[0, 1]} />
             <YAxis dataKey="modelId" type="category" axisLine={false} tickLine={false} width={150} tick={renderCustomAxisTick} />
             <Bar dataKey="score" radius={[4, 4, 4, 4]} isAnimationActive={false}>

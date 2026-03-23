@@ -46,7 +46,7 @@ export function QualityTrendChart({ data }: { data: TrendDataPoint[] }) {
               dy={10} 
             />
             <YAxis 
-              domain={[0, 1.0]} 
+              domain={[0, 1]} 
               ticks={[0, 0.25, 0.5, 0.75, 1.0]} 
               tick={{ fill: '#52525B', fontSize: 11, fontFamily: 'monospace' }} 
               axisLine={false} 

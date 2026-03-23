@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getAvailableModels } from "@/services/model.service";
 
 interface AgentRunSummary {
   id: string;
@@ -34,7 +39,11 @@ function PageSkeleton() {
 
 export default function DeploymentDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [isTriggering, setIsTriggering] = useState(false);
 
   const {
     data: deployment,
@@ -49,6 +58,40 @@ export default function DeploymentDetailPage() {
     },
     enabled: !!id,
   });
+
+  const availableModels = getAvailableModels();
+
+  const handleTriggerAgent = async () => {
+    if (!selectedModel || !deployment) return;
+    
+    setIsTriggering(true);
+    try {
+      const triggerEvent = `Model changed to ${selectedModel}`;
+      const res = await fetch(`/api/deployments/${id}/trigger`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          newModelId: selectedModel,
+          triggerEvent,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to trigger agent");
+
+      const { agentRunId } = await res.json();
+      setIsModalOpen(false);
+      setSelectedModel("");
+      router.push(`/agent?agentRunId=${agentRunId}`);
+    } catch (error) {
+      console.error("Failed to trigger agent:", error);
+    } finally {
+      setIsTriggering(false);
+    }
+  };
+
+  const handleSelectValueChange = (value: string | null) => {
+    setSelectedModel(value || "");
+  };
 
   if (isLoading) return <PageSkeleton />;
 
@@ -95,6 +138,75 @@ export default function DeploymentDetailPage() {
             <p className="text-xs text-[#52525B] uppercase">Recent Agent Runs</p>
             <p className="text-sm font-mono text-[#A1A1AA] mt-1">{deployment.agentRuns.length}</p>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger>
+              <Button 
+                variant="outline" 
+                className="border border-[rgba(239,68,68,0.6)] text-red-400 hover:bg-red-600 hover:text-white hover:border-red-600"
+              >
+                Simulate Version Change
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#111113] border-[#1F1F23] text-[#FAFAFA]">
+              <DialogHeader>
+                <DialogTitle>Simulate Model Version Change</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-[#71717A] mb-2">Current Model</p>
+                  <div className="border border-[#27272A] rounded-lg px-3 py-2 bg-[#09090B]">
+                    <span className="text-green-400 text-sm font-medium">{deployment.currentModel}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-[#71717A] mb-2">New Model</p>
+                  <Select value={selectedModel} onValueChange={handleSelectValueChange}>
+                    <SelectTrigger className="bg-[#09090B] border-[#27272A] text-[#FAFAFA]">
+                      <SelectValue placeholder="Select a new model..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#09090B] border-[#27272A]">
+                      {availableModels.map((model) => (
+                        <SelectItem 
+                          key={model.id} 
+                          value={model.id}
+                          className="text-[#FAFAFA]"
+                        >
+                          {model.label} ({model.speed})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="border border-[#F59E0B] bg-[rgba(245,158,11,0.1)] rounded-lg p-3">
+                  <p className="text-xs text-[#F59E0B]">
+                    ⚠️ This will trigger the autonomous regression watcher agent to run the full eval suite against the new model. Estimated run time: 2-5 minutes.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsModalOpen(false)}
+                    className="border-[#27272A] text-[#A1A1AA] hover:bg-[#27272A]"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleTriggerAgent}
+                    disabled={!selectedModel || isTriggering}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {isTriggering ? "Triggering..." : "Trigger Agent"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="mt-6">

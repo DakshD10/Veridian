@@ -1,8 +1,14 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 interface ScoreBarProps {
   score: number;
+  index?: number;
+  delay?: number;
 }
 
-export function ScoreBar({ score }: ScoreBarProps) {
+export function ScoreBar({ score, index = 0, delay = 0 }: ScoreBarProps) {
   const getBarColor = (score: number) => {
     if (score >= 0.75) {
       return "#22C55E";
@@ -13,14 +19,23 @@ export function ScoreBar({ score }: ScoreBarProps) {
     }
   };
 
+  const barWidth = `${score * 100}%`;
+  const animationDelay = index * 0.1 + delay;
+
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 rounded-full bg-[#1F1F23] overflow-hidden">
-        <div 
-          className="h-full transition-all duration-700"
-          style={{ 
-            width: `${score * 100}%`,
-            backgroundColor: getBarColor(score)
+      <div className="flex-1 bg-[#1F1F23] rounded-full h-[6px] overflow-hidden">
+        <motion.div
+          className="h-full"
+          initial={{ width: "0%" }}
+          animate={{ width: barWidth }}
+          transition={{
+            duration: 0.9,
+            ease: [0.25, 1, 0.5, 1],
+            delay: animationDelay,
+          }}
+          style={{
+            backgroundColor: getBarColor(score),
           }}
         />
       </div>

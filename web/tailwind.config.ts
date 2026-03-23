@@ -12,6 +12,12 @@ const config: Config = {
         sans: ["Inter"],
         mono: ["JetBrains Mono"],
       },
+      animation: {
+        shimmer: "shimmer 1.5s ease-in-out infinite",
+        regressionPulse: "regressionPulse 3s ease-in-out infinite",
+        watchPulse: "watchPulse 2s ease-out infinite",
+        marquee: "marquee 25s linear infinite",
+      },
     },
   },
   plugins: [],
