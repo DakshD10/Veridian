@@ -38,11 +38,55 @@ export async function DELETE(
       );
     }
 
-    await prisma.testCase.delete({
-      where: { id: tcId },
-    });
+    const { deletedResultCount, affectedRunCount } = await prisma.$transaction(
+      async (tx) => {
+        const relatedResults = await tx.testResult.findMany({
+          where: { testCaseId: tcId },
+          select: { runId: true },
+          distinct: ["runId"],
+        });
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+        const runIds = relatedResults.map((result) => result.runId);
+
+        const deleteResults = await tx.testResult.deleteMany({
+          where: { testCaseId: tcId },
+        });
+
+        await tx.testCase.delete({
+          where: { id: tcId },
+        });
+
+        for (const runId of runIds) {
+          const [remainingResultCount, passedCount, average] = await Promise.all([
+            tx.testResult.count({ where: { runId } }),
+            tx.testResult.count({ where: { runId, passed: true } }),
+            tx.testResult.aggregate({
+              where: { runId },
+              _avg: { overallScore: true },
+            }),
+          ]);
+
+          await tx.evalRun.update({
+            where: { id: runId },
+            data: {
+              overallScore: average._avg.overallScore ?? 0,
+              passedCount,
+              failedCount: remainingResultCount - passedCount,
+            },
+          });
+        }
+
+        return {
+          deletedResultCount: deleteResults.count,
+          affectedRunCount: runIds.length,
+        };
+      }
+    );
+
+    return NextResponse.json(
+      { ok: true, deletedResultCount, affectedRunCount },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.flatten() }, { status: 400 });

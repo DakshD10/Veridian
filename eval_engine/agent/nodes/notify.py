@@ -1,11 +1,14 @@
 # eval_engine/agent/nodes/notify.py
 import httpx
 import asyncio
+import logging
+import os
 from datetime import datetime, timezone
 from ..state import WatcherState
 
 MAX_RETRIES = 5
 RETRY_DELAYS_SECONDS = [2, 4, 8, 16, 32]  # Exponential backoff
+logger = logging.getLogger(__name__)
 
 
 async def _post_with_retry(url: str, payload: dict) -> bool:
@@ -34,7 +37,7 @@ def invoke(state: WatcherState) -> WatcherState:
         "node": "notify",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "summary": "Delivering results to Next.js callback...",
-        "status": "done"
+        "status": "running"
     })
 
     payload = {
@@ -44,6 +47,7 @@ def invoke(state: WatcherState) -> WatcherState:
         "regression_found": state["regression_found"],
         "decision":         state["decision"],
         "report_summary":   state["report_summary"],
+        "root_cause":       state.get("root_cause", ""),
         "agent_trace":      state["agent_trace"],  # includes notify node
         "scored_results":   state["scored_results"],
     }
@@ -51,27 +55,58 @@ def invoke(state: WatcherState) -> WatcherState:
     callback_url = state["callback_url"]
     success = asyncio.run(_post_with_retry(callback_url, payload))
 
-    # 2. Update the notify trace entry summary
-    state["agent_trace"][-1]["summary"] = (
-        f"Callback {'delivered successfully' if success else 'FAILED after all retries'}. "
-        f"Slack {'alert sent' if state.get('regression_found') else 'skipped (no regression)'}."
-    )
+    slack_notified = False
+    telegram_notified = False
 
-    # 3. Handle Slack (keep existing logic)
-    if state["regression_found"] and state.get("slack_webhook_url"):
-        slack_payload = {
-            "text": (
-                f":rotating_light: *Regression detected* — {state['decision']}\n"
-                f"Score: `{state['previous_score']:.2f}` → `{state['overall_score']:.2f}` "
-                f"(threshold: `{state['threshold']:.2f}`)\n"
-                f"_{state['report_summary']}_"
-            )
-        }
-        try:
-            asyncio.run(
-                httpx.AsyncClient().post(state["slack_webhook_url"], json=slack_payload)
-            )
-        except Exception as e:
-            print(f"[notify] Slack notification failed (non-fatal): {e}")
+    if success:
+        if state.get("slack_channel_id"):
+            try:
+                slack_payload = {
+                    "channelId": state["slack_channel_id"],
+                    "agentRunId": state["agent_run_id"],
+                }
+
+                async def _notify_slack():
+                    web_app_url = os.getenv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
+                    async with httpx.AsyncClient(timeout=15.0) as client:
+                        r = await client.post(
+                            f"{web_app_url.rstrip('/')}/api/slack/notify",
+                            json=slack_payload,
+                        )
+                        return r.status_code < 300
+
+                slack_notified = asyncio.run(_notify_slack())
+            except Exception as e:
+                logger.warning(f"Slack notification failed: {e}")
+
+        if state.get("telegram_chat_id"):
+            try:
+                telegram_payload = {
+                    "chatId": state["telegram_chat_id"],
+                    "agentRunId": state["agent_run_id"],
+                }
+
+                async def _notify_telegram():
+                    web_app_url = os.getenv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
+                    async with httpx.AsyncClient(timeout=15.0) as client:
+                        r = await client.post(
+                            f"{web_app_url.rstrip('/')}/api/telegram/notify",
+                            json=telegram_payload,
+                        )
+                        return r.status_code < 300
+
+                telegram_notified = asyncio.run(_notify_telegram())
+            except Exception as e:
+                logger.warning(f"Telegram notification failed: {e}")
+
+    state["agent_trace"][-1].update({
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "summary": (
+            f"Callback {'delivered' if success else 'FAILED'}. "
+            f"Slack: {'sent' if slack_notified else 'skipped' if not state.get('slack_channel_id') else 'failed'}. "
+            f"Telegram: {'sent' if telegram_notified else 'skipped' if not state.get('telegram_chat_id') else 'failed'}."
+        ),
+        "status": "done" if success else "error",
+    })
 
     return state

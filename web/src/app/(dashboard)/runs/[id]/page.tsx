@@ -45,11 +45,11 @@ interface RunDetail {
 
 function PageSkeleton() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#09090B] w-full gap-4">
-      <Skeleton className="h-12 w-full bg-[#111113]/50 rounded-none" />
+    <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full gap-4">
+      <Skeleton className="h-12 w-full bg-[#121215]/50 rounded-none" />
       <div className="px-8 mt-4 flex flex-col gap-4">
-        <Skeleton className="h-12 w-full bg-[#111113]/50 rounded-lg" />
-        <Skeleton className="h-[200px] w-full bg-[#111113]/50 rounded-lg" />
+        <Skeleton className="h-12 w-full bg-[#121215]/50 rounded-lg" />
+        <Skeleton className="h-[200px] w-full bg-[#121215]/50 rounded-lg" />
       </div>
     </div>
   );
@@ -113,8 +113,8 @@ export default function RunDetailPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#09090B] w-full">
-      <div className="sticky top-0 z-10 w-full h-12 bg-[#111113] border-b border-[#1F1F23] px-8 flex items-center justify-between">
+    <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full">
+      <div className="sticky top-0 z-10 w-full h-12 bg-[#121215] border-b border-[#1F1F23] px-8 flex items-center justify-between">
         <div className="flex items-center">
           <Link href="/runs" className="font-mono text-[13px] text-[#52525B] hover:text-[#71717A] transition-colors">
             Run History
@@ -131,7 +131,7 @@ export default function RunDetailPage() {
         </button>
       </div>
 
-      <div className="px-8 py-4 border-b border-[#1F1F23] flex gap-8 items-center w-full bg-[#09090B]">
+      <div className="px-8 py-4 border-b border-[#1F1F23] flex gap-8 items-center w-full bg-[#0A0A0D]">
         <div className="font-sans font-normal text-[13px] text-[#71717A] pr-8 border-r border-[#1F1F23]">
           {run.results.length} test cases
         </div>

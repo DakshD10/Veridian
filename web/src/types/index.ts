@@ -31,6 +31,7 @@ export interface EvalRun {
   modelVersion?: string;
   status: RunStatus;
   triggeredBy: string;
+  evalMode?: "standard" | "rigorous" | "brutal";
   overallScore?: number;
   passedCount: number;
   failedCount: number;
@@ -56,6 +57,7 @@ export interface TestResult {
   modelOutput: string;
   scores: Record<string, number>;
   reasons?: Record<string, string>;
+  severity?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
   overallScore: number;
   passed: boolean;
   latencyMs?: number;
@@ -140,3 +142,93 @@ export const AGENT_NODE_ORDER = [
 ] as const;
 
 export type AgentNodeName = typeof AGENT_NODE_ORDER[number];
+
+export interface CustomProvider {
+  id: string;
+  name: string;
+  baseUrl: string;
+  apiKey?: string | null;
+  modelId: string;
+  description?: string | null;
+  providerType: string;
+  isActive: boolean;
+  lastTestedAt?: Date | null;
+  lastTestOk: boolean;
+  lastLatencyMs?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProviderTestResult {
+  ok: boolean;
+  latencyMs?: number;
+  error?: string;
+}
+
+export interface ModelOption {
+  id: string;
+  label: string;
+  speed: string;
+  provider: "groq" | "gemini" | "custom";
+  description?: string;
+  modelId?: string;
+  baseUrl?: string;
+}
+
+export interface GeneratedTestCase {
+  input: string;
+  expectedOutput: string;
+  context?: string | null;
+  tags: string[];
+}
+
+export interface GenerateSuiteResponse {
+  test_cases: Array<{
+    input: string;
+    expected_output: string;
+    context?: string | null;
+    tags: string[];
+  }>;
+  domain: string;
+  generated_count: number;
+}
+
+// Used for editable rows in the preview table
+export interface EditableTestCase extends GeneratedTestCase {
+  _localId: string; // UUID for React key - not sent to DB
+  _deleted: boolean; // marked for removal in preview
+}
+
+export interface RedTeamVulnerability {
+  attack_type: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  description: string;
+  input?: string;
+  output?: string;
+  original_test_case_id?: string;
+}
+
+export interface RedTeamRun {
+  id: string;
+  suiteId: string;
+  modelId: string;
+  status: "running" | "completed" | "error";
+  attacksGenerated: number;
+  attacksSucceeded: number;
+  criticalFindings: number;
+  reportSummary: string | null;
+  findings: RedTeamVulnerability[] | null;
+  agentTrace: Array<{
+    node: string;
+    timestamp: string;
+    summary: string;
+    status: string;
+  }> | null;
+  createdAt: string;
+  completedAt: string | null;
+  suite?: {
+    id: string;
+    name: string;
+    domain: string | null;
+  };
+}

@@ -3,7 +3,6 @@
 import { useRuns } from "@/hooks/useRuns";
 import { useRouter } from "next/navigation";
 import { Bot, ChevronDown } from "lucide-react";
-import Link from "next/link";
 import type { EvalRun } from "@/types";
 import { motion } from "framer-motion";
 import { useState, useRef } from "react";

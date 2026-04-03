@@ -34,6 +34,9 @@ export default function RunEvalSuitePage() {
   const id = params.id as string;
 
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [selectedEvalMode, setSelectedEvalMode] = useState<
+    "standard" | "rigorous" | "brutal"
+  >("standard");
   const [activeRunId, setActiveRunId] = useState<string | null>(
     searchParams.get("runId")
   );
@@ -57,7 +60,7 @@ export default function RunEvalSuitePage() {
       const res = await fetch("/api/runs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ suiteId: id, modelId }),
+        body: JSON.stringify({ suiteId: id, modelId, evalMode: selectedEvalMode }),
       });
       if (!res.ok) throw new Error("Failed to start run");
       return res.json() as Promise<{ runId: string }>;
@@ -154,6 +157,23 @@ export default function RunEvalSuitePage() {
               <div className="py-3 flex justify-between items-center">
                 <span className="font-sans text-[13px] text-[#52525B]">Test Cases</span>
                 <span className="font-sans text-[14px] font-medium text-[#FAFAFA]">{suite.testCases.length}</span>
+              </div>
+              <div className="py-3 flex justify-between items-center">
+                <span className="font-sans text-[13px] text-[#52525B]">Eval Mode</span>
+                <select
+                  value={selectedEvalMode}
+                  onChange={(e) =>
+                    setSelectedEvalMode(
+                      e.target.value as "standard" | "rigorous" | "brutal"
+                    )
+                  }
+                  disabled={isRunning}
+                  className="bg-[#18181B] border border-[#27272A] rounded-md px-2 py-1 text-xs text-[#FAFAFA] disabled:opacity-60"
+                >
+                  <option value="standard">Standard</option>
+                  <option value="rigorous">Rigorous</option>
+                  <option value="brutal">Brutal</option>
+                </select>
               </div>
               <div className="py-3 flex justify-between items-center">
                 <span className="font-sans text-[13px] text-[#52525B]">Judge</span>

@@ -20,10 +20,9 @@ interface RegressionBannerProps {
   newScore: number;
   suiteName?: string;
   modelId?: string;
-  reportSummary?: string | null;
 }
 
-export function RegressionBanner({ regressionFound, previousScore, newScore, suiteName, modelId, reportSummary }: RegressionBannerProps) {
+export function RegressionBanner({ regressionFound, previousScore, newScore, suiteName, modelId }: RegressionBannerProps) {
   if (!regressionFound) return null;
 
   return (

@@ -8,13 +8,16 @@ import {
   FlaskConical,
   History,
   Rocket,
-  Bot
+  Bot,
+  Shield,
+  Settings
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Eval Suites", href: "/suites", icon: FlaskConical },
   { name: "Run History", href: "/runs", icon: History },
+  { name: "Red Team", href: "/red-team", icon: Shield },
   { name: "Deployments", href: "/deployments", icon: Rocket },
   { name: "Agent", href: "/agent", icon: Bot },
 ];
@@ -66,6 +69,14 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="p-3 mt-auto flex flex-col gap-1">
+        <Link
+          href="/settings"
+          aria-label="Open Settings"
+          className="relative z-20 pointer-events-auto cursor-pointer flex items-center gap-3 h-9 px-3 rounded-md font-medium text-sm text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#18181B] transition-colors"
+        >
+          <Settings size={14} className="text-violet-500" />
+          Settings
+        </Link>
         <span className="text-[11px] font-sans text-[#3F3F46]">LunaticBytes · TechnoTarang 2026</span>
         <span className="text-[11px] font-mono text-[#3F3F46]">v0.1.0</span>
       </div>

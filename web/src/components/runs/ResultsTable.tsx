@@ -40,8 +40,8 @@ export function ResultsTable({ results }: ResultsTableProps) {
   }
 
   return (
-    <div className="w-full border border-[#1F1F23] rounded-lg overflow-hidden bg-[#111113]">
-      <div className="grid grid-cols-[2fr_120px_120px_120px] gap-4 px-4 py-3 border-b border-[#1F1F23] bg-[#09090B]">
+    <div className="w-full border border-[#1F1F23] rounded-lg overflow-hidden bg-[#121215]">
+      <div className="grid grid-cols-[2fr_120px_120px_120px] gap-4 px-4 py-3 border-b border-[#1F1F23] bg-[#0A0A0D]">
         <p className="text-xs font-medium uppercase tracking-wider text-[#71717A]">Input</p>
         <p className="text-xs font-medium uppercase tracking-wider text-[#71717A]">Score</p>
         <p className="text-xs font-medium uppercase tracking-wider text-[#71717A]">Status</p>

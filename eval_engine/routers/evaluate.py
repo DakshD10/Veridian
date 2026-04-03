@@ -8,7 +8,11 @@ router = APIRouter()
 @router.post("/evaluate")
 async def evaluate(request: EvaluateRequest) -> EvaluateResponse:
     test_cases = [tc.model_dump() for tc in request.test_cases]
-    results = run_deepeval(test_cases)
+    results = run_deepeval(
+        test_cases,
+        metrics=request.metrics,
+        eval_mode=request.eval_mode,
+    )
     total = len(results)
     passed = sum(1 for r in results if r["passed"])
     average_score = round(

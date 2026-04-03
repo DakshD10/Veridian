@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function triggerAgentRun(
   deploymentId: string,
   newModelId: string,
-  triggerEvent: string
+  triggerEvent: string,
+  triggerSource: string = "manual"
 ) {
   const deployment = await prisma.watchedDeployment.findUnique({
     where: { id: deploymentId },
@@ -19,6 +21,16 @@ export async function triggerAgentRun(
   if (!deployment) {
     throw new Error("Watched deployment not found");
   }
+
+  // Get the full deployment with slackWebhookUrl
+  const fullDeployment = await prisma.watchedDeployment.findUnique({
+    where: { id: deploymentId },
+    select: {
+      slackWebhookUrl: true,
+      slackChannelId: true,
+      telegramChatId: true,
+    },
+  });
 
   const lastCompletedRun = await prisma.evalRun.findFirst({
     where: {
@@ -39,6 +51,7 @@ export async function triggerAgentRun(
     data: {
       deploymentId,
       triggerEvent,
+      triggerSource,
       previousScore,
       status: "running",
     },
@@ -54,11 +67,14 @@ export async function triggerAgentRun(
     agent_run_id: agentRun.id,
     deployment_id: deployment.id,
     trigger_event: triggerEvent,
+    trigger_source: triggerSource,
     new_model_id: newModelId,
     previous_score: previousScore,
     threshold: deployment.threshold,
     callback_url: callbackUrl,
-    slack_webhook_url: deployment.slackWebhookUrl,
+    slack_webhook_url: fullDeployment?.slackWebhookUrl,
+  slack_channel_id: fullDeployment?.slackChannelId,
+  telegram_chat_id: fullDeployment?.telegramChatId,
     eval_suite: {
       id: deployment.suite.id,
       name: deployment.suite.name,
@@ -96,7 +112,9 @@ export async function triggerAgentRun(
   return { agentRunId: agentRun.id };
 }
 
-export async function updateAgentRunResult(agentRunId: string, result: any) {
+export async function updateAgentRunResult(agentRunId: string, result: unknown) {
+  const resultObj = (result ?? {}) as Record<string, unknown>;
+
   const existing = await prisma.agentRun.findUnique({
     where: { id: agentRunId },
     select: { status: true },
@@ -117,55 +135,75 @@ export async function updateAgentRunResult(agentRunId: string, result: any) {
     regressionFound?: boolean;
     decision?: string;
     reportSummary?: string;
-    agentTrace?: unknown;
+    rootCause?: string | null;
+    agentTrace?: Prisma.JsonValue;
     evalRunId?: string;
     slackNotified?: boolean;
+    telegramNotified?: boolean;
   } = {
     status: "completed",
   };
 
-  if (typeof result.new_score === "number") data.newScore = result.new_score;
-  if (typeof result.newScore === "number") data.newScore = result.newScore;
+  if (typeof resultObj.new_score === "number") data.newScore = resultObj.new_score;
+  if (typeof resultObj.newScore === "number") data.newScore = resultObj.newScore;
 
-  if (typeof result.previous_score === "number") {
-    data.previousScore = result.previous_score;
+  if (typeof resultObj.previous_score === "number") {
+    data.previousScore = resultObj.previous_score;
   }
-  if (typeof result.previousScore === "number") {
-    data.previousScore = result.previousScore;
-  }
-
-  if (typeof result.regression_found === "boolean") {
-    data.regressionFound = result.regression_found;
-  }
-  if (typeof result.regressionFound === "boolean") {
-    data.regressionFound = result.regressionFound;
+  if (typeof resultObj.previousScore === "number") {
+    data.previousScore = resultObj.previousScore;
   }
 
-  if (typeof result.decision === "string") data.decision = result.decision;
-
-  if (typeof result.report_summary === "string") {
-    data.reportSummary = result.report_summary;
+  if (typeof resultObj.regression_found === "boolean") {
+    data.regressionFound = resultObj.regression_found;
   }
-  if (typeof result.reportSummary === "string") {
-    data.reportSummary = result.reportSummary;
+  if (typeof resultObj.regressionFound === "boolean") {
+    data.regressionFound = resultObj.regressionFound;
   }
 
-  if (result.agent_trace !== undefined) data.agentTrace = result.agent_trace;
-  if (result.agentTrace !== undefined) data.agentTrace = result.agentTrace;
+  if (typeof resultObj.decision === "string") data.decision = resultObj.decision;
 
-  if (typeof result.eval_run_id === "string") data.evalRunId = result.eval_run_id;
-  if (typeof result.evalRunId === "string") data.evalRunId = result.evalRunId;
-
-  if (typeof result.slack_notified === "boolean") {
-    data.slackNotified = result.slack_notified;
+  if (typeof resultObj.report_summary === "string") {
+    data.reportSummary = resultObj.report_summary;
   }
-  if (typeof result.slackNotified === "boolean") {
-    data.slackNotified = result.slackNotified;
+  if (typeof resultObj.reportSummary === "string") {
+    data.reportSummary = resultObj.reportSummary;
   }
 
+  if (typeof resultObj.root_cause === "string") {
+    data.rootCause = resultObj.root_cause;
+  }
+  if (typeof resultObj.rootCause === "string") {
+    data.rootCause = resultObj.rootCause;
+  }
+
+  if (resultObj.agent_trace !== undefined) data.agentTrace = resultObj.agent_trace as Prisma.JsonValue;
+  if (resultObj.agentTrace !== undefined) data.agentTrace = resultObj.agentTrace as Prisma.JsonValue;
+
+  // evalRunId is not updatable, so we skip it
+
+  if (typeof resultObj.slack_notified === "boolean") {
+    data.slackNotified = resultObj.slack_notified;
+  }
+  if (typeof resultObj.slackNotified === "boolean") {
+    data.slackNotified = resultObj.slackNotified;
+  }
+
+  if (typeof resultObj.telegram_notified === "boolean") {
+    data.telegramNotified = resultObj.telegram_notified;
+  }
+  if (typeof resultObj.telegramNotified === "boolean") {
+    data.telegramNotified = resultObj.telegramNotified;
+  }
+
+  // Remove evalRunId from data since it's not updatable
+  const updateData = { ...data };
+  delete updateData.evalRunId;
+  
   await prisma.agentRun.update({
     where: { id: agentRunId },
-    data,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: updateData as any,
   });
 
   return { success: true };

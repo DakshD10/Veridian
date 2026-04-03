@@ -12,11 +12,14 @@ def run_agent_background(payload: dict):
             "agent_run_id":     payload["agent_run_id"],
             "deployment_id":    payload["deployment_id"],
             "trigger_event":    payload["trigger_event"],
+            "trigger_source":   payload.get("trigger_source", "manual"),
             "new_model_id":     payload["new_model_id"],
             "previous_score":   payload["previous_score"],
             "threshold":        payload["threshold"],
             "callback_url":     payload["callback_url"],
             "slack_webhook_url": payload.get("slack_webhook_url"),
+            "slack_channel_id": payload.get("slack_channel_id"),
+            "telegram_chat_id": payload.get("telegram_chat_id"),
             "eval_suite":       payload["eval_suite"],
             "test_results":     [],
             "scored_results":   [],
@@ -24,6 +27,8 @@ def run_agent_background(payload: dict):
             "regression_found": False,
             "decision":         "",
             "report_summary":   "",
+            "root_cause":       "",
+            "failure_clusters": [],
             "agent_trace":      [],
         }
         watcher.invoke(initial_state)

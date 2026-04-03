@@ -9,6 +9,8 @@ const CreateDeploymentSchema = z.object({
   threshold: z.number().min(0).max(1).optional(),
   description: z.string().optional(),
   slackWebhookUrl: z.string().url().optional(),
+  slackChannelId: z.string().optional(),
+  telegramChatId: z.string().optional(),
 });
 
 function getErrorMessage(error: unknown): string {
@@ -16,7 +18,7 @@ function getErrorMessage(error: unknown): string {
   return "Unknown error";
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const deployments = await prisma.watchedDeployment.findMany({
       include: {
@@ -68,6 +70,8 @@ export async function POST(request: NextRequest) {
         threshold: data.threshold,
         description: data.description,
         slackWebhookUrl: data.slackWebhookUrl,
+        slackChannelId: data.slackChannelId || null,
+        telegramChatId: data.telegramChatId || null,
       },
     });
 

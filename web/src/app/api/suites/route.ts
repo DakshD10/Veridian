@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
@@ -13,7 +13,7 @@ function getErrorMessage(error: unknown): string {
   return "Unknown error";
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const suites = await prisma.evalSuite.findMany({
       include: {

@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
@@ -12,77 +10,75 @@ datasource db {
 }
 
 model EvalSuite {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  domain      String?
-  version     Int      @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  testCases          TestCase[]
+  id                 String              @id @default(cuid())
+  name               String
+  description        String?
+  domain             String?
+  version            Int                 @default(1)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   runs               EvalRun[]
+  redTeamRuns        RedTeamRun[]
+  testCases          TestCase[]
   watchedDeployments WatchedDeployment[]
 }
 
 model TestCase {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   suiteId        String
   input          String
   expectedOutput String
   context        String?
   tags           String[]
-  createdAt      DateTime @default(now())
-
-  suite   EvalSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
-  results TestResult[]
+  createdAt      DateTime     @default(now())
+  suite          EvalSuite    @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  results        TestResult[]
 }
 
 model EvalRun {
-  id           String    @id @default(cuid())
+  id           String       @id @default(cuid())
   suiteId      String
   modelId      String
   modelVersion String?
-  status       RunStatus @default(PENDING)
-  triggeredBy  String    @default("manual")
+  status       RunStatus    @default(PENDING)
+  triggeredBy  String       @default("manual")
   overallScore Float?
-  passedCount  Int       @default(0)
-  failedCount  Int       @default(0)
-  createdAt    DateTime  @default(now())
+  passedCount  Int          @default(0)
+  failedCount  Int          @default(0)
+  createdAt    DateTime     @default(now())
   completedAt  DateTime?
-
-  suite    EvalSuite  @relation(fields: [suiteId], references: [id])
-  results  TestResult[]
-  agentRun AgentRun?
+  evalMode     String       @default("standard")
+  agentRun     AgentRun?
+  suite        EvalSuite    @relation(fields: [suiteId], references: [id])
+  results      TestResult[]
 }
 
 model TestResult {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   runId        String
   testCaseId   String
   modelOutput  String
   scores       Json
-  reasons      Json?    // ✅ Added (required in CONTEXT.md)
+  reasons      Json?
+  severity     String?
   overallScore Float
   passed       Boolean
   latencyMs    Int?
-  createdAt    DateTime @default(now())
-
-  run          EvalRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
-  testCase     TestCase     @relation(fields: [testCaseId], references: [id])
-  metricScores MetricScore[]  // ✅ Added (required)
+  createdAt    DateTime      @default(now())
+  metricScores MetricScore[]
+  run          EvalRun       @relation(fields: [runId], references: [id], onDelete: Cascade)
+  testCase     TestCase      @relation(fields: [testCaseId], references: [id])
 }
 
 model MetricScore {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   testResultId String
   metricName   String
   score        Float
   passed       Boolean
   reason       String?
-  createdAt    DateTime @default(now())
-
-  testResult TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  testResult   TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
 
   @@index([metricName])
   @@index([score])
@@ -90,38 +86,73 @@ model MetricScore {
 }
 
 model WatchedDeployment {
-  id              String   @id @default(cuid())
+  id              String     @id @default(cuid())
   name            String
   description     String?
   suiteId         String
   currentModel    String
-  threshold       Float    @default(0.75)
+  threshold       Float      @default(0.75)
   slackWebhookUrl String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  suite     EvalSuite @relation(fields: [suiteId], references: [id])
-  agentRuns AgentRun[]
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  slackChannelId  String?
+  telegramChatId  String?
+  agentRuns       AgentRun[]
+  suite           EvalSuite  @relation(fields: [suiteId], references: [id])
 }
 
 model AgentRun {
-  id              String   @id @default(cuid())
-  deploymentId    String
-  evalRunId       String?  @unique
-  triggerEvent    String
-  previousScore   Float?
-  newScore        Float?
-  regressionFound Boolean  @default(false)
-  decision        String?
-  reportSummary   String?
-  agentTrace      Json?
-  slackNotified   Boolean  @default(false)
-  status          String   @default("running")
-  createdAt       DateTime @default(now())
+  id               String            @id @default(cuid())
+  deploymentId     String
+  evalRunId        String?           @unique
+  triggerEvent     String
+  previousScore    Float?
+  newScore         Float?
+  regressionFound  Boolean           @default(false)
+  decision         String?
+  reportSummary    String?
+  agentTrace       Json?
+  slackNotified    Boolean           @default(false)
+  status           String            @default("running")
+  createdAt        DateTime          @default(now())
+  rootCause        String?
+  telegramNotified Boolean           @default(false)
+  triggerSource    String            @default("manual")
+  deployment       WatchedDeployment @relation(fields: [deploymentId], references: [id])
+  evalRun          EvalRun?          @relation(fields: [evalRunId], references: [id])
+}
 
-  deployment WatchedDeployment @relation(fields: [deploymentId], references: [id])
-  evalRun    EvalRun?          @relation(fields: [evalRunId], references: [id])
+model CustomProvider {
+  id            String    @id @default(cuid())
+  name          String
+  baseUrl       String
+  apiKey        String?
+  modelId       String
+  description   String?
+  providerType  String    @default("openai-compatible")
+  isActive      Boolean   @default(true)
+  lastTestedAt  DateTime?
+  lastTestOk    Boolean   @default(false)
+  lastLatencyMs Int?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model RedTeamRun {
+  id               String    @id @default(cuid())
+  suiteId          String
+  modelId          String
+  status           String    @default("running")
+  attacksGenerated Int       @default(0)
+  attacksSucceeded Int       @default(0)
+  criticalFindings Int       @default(0)
+  reportSummary    String?
+  findings         Json?
+  agentTrace       Json?
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+  suite            EvalSuite @relation(fields: [suiteId], references: [id])
 }
 
 enum RunStatus {

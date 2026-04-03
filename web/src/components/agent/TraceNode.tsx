@@ -7,9 +7,9 @@ export function TraceNode({
 }) {
   if (state === "PENDING") {
     return (
-      <div className="border border-solid border-[#1F1F23] rounded-lg p-4 border-l-[3px] border-l-[#27272A] bg-[#111113]">
+      <div className="border border-solid border-[#1F1F23] rounded-lg p-4 border-l-[3px] border-l-[#27272A] bg-[#121215]">
         <div className="flex items-start gap-4">
-          <Clock className="w-[18px] h-[18px] text-[#3F3F46] mt-0.5" />
+          <Clock className="w-4 h-4 text-[#3F3F46] mt-0.5" />
           <div className="flex flex-col flex-1">
              <span className="font-sans font-semibold text-[14px] text-[#52525B] lowercase">{name.toLowerCase()}</span>
              <span className="font-sans text-[12px] text-[#3F3F46] mt-0.5">{summary}</span>
@@ -22,14 +22,14 @@ export function TraceNode({
 
   if (state === "RUNNING") {
     return (
-      <div className="border border-solid border-[rgba(139,92,246,0.4)] rounded-lg p-4 border-l-[3px] border-l-[#8B5CF6] bg-[rgba(139,92,246,0.04)]">
+      <div className="border border-solid border-[#1F1F23] rounded-lg p-4 border-l-[3px] border-l-[#8B5CF6] bg-[#121215]">
         <div className="flex items-start gap-4">
-          <Loader2 className="w-[18px] h-[18px] text-[#8B5CF6] animate-spin mt-0.5" />
+          <Loader2 className="w-4 h-4 text-[#8B5CF6] animate-spin" />
           <div className="flex flex-col flex-1">
              <span className="font-sans font-semibold text-[14px] text-[#FAFAFA] lowercase">{name.toLowerCase()}</span>
-             <span className="font-sans italic text-[13px] text-[#8B5CF6] mt-0.5">Evaluating target variables via trace checks...</span>
+             <span className="font-sans text-[12px] text-[#71717A] mt-0.5">{summary}</span>
           </div>
-           <span className="font-mono text-[12px] text-[#52525B] ml-auto self-start">{timing}</span>
+          <span className="font-mono text-[12px] text-[#52525B] ml-auto self-start">{timing}</span>
         </div>
       </div>
     );
@@ -39,12 +39,12 @@ export function TraceNode({
   const isExpandedReport = nodeKey === "generate_report" && reportText;
 
   return (
-    <div className={`border border-solid border-[#1F1F23] rounded-lg p-4 border-l-[3px] ${isFailedBaseline ? "border-l-[#EF4444]" : (nodeKey === "generate_report" ? "border-l-[#22C55E]" : "border-l-[#22C55E]")} ${isExpandedReport ? "bg-[rgba(139,92,246,0.04)] border-[rgba(139,92,246,0.2)]" : "bg-[#111113]"}`}>
+    <div className={`border border-solid border-[#1F1F23] rounded-lg p-4 border-l-[3px] ${isFailedBaseline ? "border-l-[#EF4444]" : (nodeKey === "generate_report" ? "border-l-[#22C55E]" : "border-l-[#22C55E]")} ${isExpandedReport ? "bg-[rgba(139,92,246,0.04)] border-[rgba(139,92,246,0.2)]" : "bg-[#121215]"}`}>
       <div className="flex items-start gap-4 w-full">
         {isFailedBaseline ? (
-          <XCircle className="w-[18px] h-[18px] text-[#EF4444] flex-shrink-0 mt-0.5 tracking-tight" />
+          <XCircle className="w-4 h-4 text-[#EF4444] shrink-0 mt-0.5 tracking-tight" />
         ) : (
-          <CheckCircle2 className="w-[18px] h-[18px] text-[#22C55E] flex-shrink-0 mt-0.5 tracking-tight" />
+          <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0 mt-0.5 tracking-tight" />
         )}
         <div className="flex flex-col flex-1 w-full max-w-full">
            <span className="font-sans font-semibold text-[14px] text-[#FAFAFA] lowercase">{name.toLowerCase()}</span>

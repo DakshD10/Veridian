@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { prisma } from "@/lib/prisma";
 
 const groqApiKey = process.env.GROQ_API_KEY;
 const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -34,7 +35,12 @@ export async function callModel(
 ): Promise<{ output: string; latencyMs: number }> {
   await throttle();
 
-  const model = getAvailableModels().find(m => m.id === modelId);
+  if (modelId.startsWith("custom:")) {
+    const providerId = modelId.replace("custom:", "");
+    return callCustomProvider(providerId, input, context);
+  }
+
+  const model = (await getAvailableModels()).find(m => m.id === modelId);
   const provider = model?.provider ?? "groq";
 
   const systemPrompt = context
@@ -86,23 +92,88 @@ export async function callModel(
   };
 }
 
-export function getAvailableModels() {
-  const allModels = [
+async function callCustomProvider(
+  providerId: string,
+  input: string,
+  context?: string
+): Promise<{ output: string; latencyMs: number }> {
+  // Fetch provider config from DB
+  const provider = await prisma.customProvider.findUnique({
+    where: { id: providerId },
+  });
+
+  if (!provider) {
+    throw new Error(`Custom provider not found: ${providerId}`);
+  }
+
+  if (!provider.isActive) {
+    throw new Error(`Custom provider is inactive: ${provider.name}`);
+  }
+
+  // Build headers
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (provider.apiKey) {
+    headers["Authorization"] = `Bearer ${provider.apiKey}`;
+  }
+
+  // Build system prompt
+  const systemPrompt = context
+    ? `You are a helpful AI assistant. Use this context to answer accurately: ${context}`
+    : "You are a helpful AI assistant. Answer accurately and concisely.";
+
+  // Record call time for throttle (already waited in callModel)
+  const start = Date.now();
+  _lastCallTime = Date.now();
+
+  // Make OpenAI-compatible request
+  const response = await fetch(`${provider.baseUrl}/chat/completions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: provider.modelId,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: input },
+      ],
+      temperature: 0.1,
+      max_tokens: 1024,
+    }),
+  });
+
+  _lastCallTime = Date.now();
+
+  if (!response.ok) {
+    throw new Error(
+      `Custom provider error [${provider.name}]: HTTP ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data = await response.json();
+
+  const output = data.choices?.[0]?.message?.content;
+  if (!output) {
+    throw new Error(`Custom provider [${provider.name}]: empty response`);
+  }
+
+  return {
+    output,
+    latencyMs: Date.now() - start,
+  };
+}
+
+export async function getAvailableModels() {
+  const builtInModels = [
     // ── LLAMA 4 (Latest) ──────────────────────────────────
     { id: "meta-llama/llama-4-scout-17b-16e-instruct",    label: "Llama 4 Scout 17B",    speed: "very fast", provider: "groq"   },
     { id: "meta-llama/llama-4-maverick-17b-128e-instruct", label: "Llama 4 Maverick 17B", speed: "fast",      provider: "groq"   },
 
     // ── LLAMA 3.x ─────────────────────────────────────────
-    { id: "llama3-70b-8192",               label: "Llama 3 70B",          speed: "fast",      provider: "groq"   },
-    { id: "llama3-8b-8192",                label: "Llama 3 8B",           speed: "very fast", provider: "groq"   },
     { id: "llama-3.1-8b-instant",          label: "Llama 3.1 8B Instant", speed: "very fast", provider: "groq"   },
     { id: "llama-3.2-3b-preview",          label: "Llama 3.2 3B",         speed: "very fast", provider: "groq"   },
     { id: "llama-3.2-11b-vision-preview",  label: "Llama 3.2 11B Vision", speed: "fast",      provider: "groq"   },
     { id: "llama-3.2-90b-vision-preview",  label: "Llama 3.2 90B Vision", speed: "fast",      provider: "groq"   },
-
-    // ── GPT OSS (OpenAI Open Source on Groq) ─────────────
-    { id: "openai/gpt-oss-20b",            label: "GPT OSS 20B",          speed: "very fast", provider: "groq"   },
-    { id: "openai/gpt-oss-120b",           label: "GPT OSS 120B",         speed: "fast",      provider: "groq"   },
 
     // ── QWEN ──────────────────────────────────────────────
     { id: "qwen/qwen3-32b",                label: "Qwen 3 32B",           speed: "fast",      provider: "groq"   },
@@ -120,9 +191,74 @@ export function getAvailableModels() {
     { id: "gemini-1.5-flash",              label: "Gemini 1.5 Flash",     speed: "very fast", provider: "gemini" },
   ];
 
-  return allModels.filter(model => {
-    if (model.provider === "groq")   return !!groq;
-    if (model.provider === "gemini") return !!gemini;
-    return false;
+  // Fetch active custom providers from DB
+  const customProviders = await prisma.customProvider.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
   });
+
+  const customModels = customProviders.map((p) => ({
+    id: `custom:${p.id}`,
+    label: p.name,
+    speed: p.lastLatencyMs ? `${p.lastLatencyMs}ms` : "unknown",
+    provider: "custom" as const,
+    description: p.description ?? undefined,
+    modelId: p.modelId,
+    baseUrl: p.baseUrl,
+  }));
+
+  return [...builtInModels, ...customModels];
+}
+
+export async function testProviderConnection(
+  baseUrl: string,
+  modelId: string,
+  apiKey?: string | null
+): Promise<{ ok: boolean; latencyMs?: number; error?: string }> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (apiKey) {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+  }
+
+  const start = Date.now();
+
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: "user", content: "Say OK" }],
+        max_tokens: 5,
+        temperature: 0,
+      }),
+    });
+
+    const latencyMs = Date.now() - start;
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: `HTTP ${response.status} — ${response.statusText}`,
+      };
+    }
+
+    const data = await response.json();
+    const replied = data.choices?.[0]?.message?.content;
+    void replied;
+
+    return {
+      ok: true,
+      latencyMs,
+      // Include first 50 chars of model response as confirmation
+      error: undefined,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Connection failed",
+    };
+  }
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash } from "lucide-react";
+import { toast } from "sonner";
 import { AddTestCaseForm } from "./AddTestCaseForm";
 import { TestCase } from "@/hooks/useSuite";
 
@@ -15,11 +16,17 @@ export function TestCaseTable({ suiteId, testCases }: { suiteId: string; testCas
       const res = await fetch(`/api/suites/${suiteId}/test-cases/${tcId}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete test case");
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? "Failed to delete test case");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suite", suiteId] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
     },
   });
 
@@ -35,7 +42,12 @@ export function TestCaseTable({ suiteId, testCases }: { suiteId: string; testCas
       </div>
 
       {/* Rows */}
-      {testCases.map((tc, index) => {
+      {testCases.length === 0 ? (
+        <div className="px-6 py-12 flex flex-col items-center justify-center border-b border-[#1F1F23]">
+          <p className="text-[13px] text-[#A1A1AA] font-sans">No test cases yet. Add your first test case below.</p>
+        </div>
+      ) : (
+        testCases.map((tc, index) => {
         const isExpanded = expandedId === tc.id;
         const rowNum = String(index + 1).padStart(2, '0');
 
@@ -102,7 +114,8 @@ export function TestCaseTable({ suiteId, testCases }: { suiteId: string; testCas
             </div>
           </div>
         );
-      })}
+      })
+      )}
 
       {/* Inline Form */}
       <AddTestCaseForm suiteId={suiteId} />

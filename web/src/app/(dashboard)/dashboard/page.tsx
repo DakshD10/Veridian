@@ -8,7 +8,6 @@ import api from "@/lib/axios";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { QualityTrendChart } from "@/components/dashboard/QualityTrendChart";
 import { ModelComparisonChart } from "@/components/dashboard/ModelComparisonChart";
-import { CriticalRegressionsFeed } from "@/components/dashboard/CriticalRegressionsFeed";
 import { EvalPipelineCanvas } from "@/components/dashboard/EvalPipelineCanvas";
 import { AmbientGrid } from "@/components/dashboard/AmbientGrid";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,16 +75,16 @@ function formatTimeAgo(dateStr: string): string {
 
 function LoadingState() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#09090B] w-full p-8 gap-6">
+    <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full p-8 gap-6">
       <div className="grid grid-cols-4 gap-4">
-        <Skeleton className="h-[140px] rounded-lg bg-[#111113]" />
-        <Skeleton className="h-[140px] rounded-lg bg-[#111113]" />
-        <Skeleton className="h-[140px] rounded-lg bg-[#111113]" />
-        <Skeleton className="h-[140px] rounded-lg bg-[#111113]" />
+        <Skeleton className="h-[140px] rounded-lg bg-[#121215]" />
+        <Skeleton className="h-[140px] rounded-lg bg-[#121215]" />
+        <Skeleton className="h-[140px] rounded-lg bg-[#121215]" />
+        <Skeleton className="h-[140px] rounded-lg bg-[#121215]" />
       </div>
       <div className="flex gap-6 w-full mt-2">
-        <Skeleton className="w-[62%] h-[350px] rounded-lg bg-[#111113]" />
-        <Skeleton className="w-[38%] h-[350px] rounded-lg bg-[#111113]" />
+        <Skeleton className="w-[62%] h-[350px] rounded-lg bg-[#121215]" />
+        <Skeleton className="w-[38%] h-[350px] rounded-lg bg-[#121215]" />
       </div>
     </div>
   );
@@ -121,9 +120,11 @@ export default function DashboardPage() {
   } = useModelComparison(selectedSuiteId);
 
   const {
-    data: recentRuns = [],
+    data: recentRunsResponse,
     isLoading: recentRunsLoading,
   } = useRuns({ limit: 10 });
+  
+  const recentRuns = recentRunsResponse?.data || [];
 
   const {
     data: agentRuns = [],
@@ -162,7 +163,7 @@ export default function DashboardPage() {
 
   if (!suiteList || suiteList.length === 0) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#09090B] w-full p-8">
+      <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="font-sans text-[20px] font-bold text-[#FAFAFA]">Dashboard</h1>
           <Link
@@ -212,7 +213,7 @@ export default function DashboardPage() {
   const deltaColor = delta !== null && delta >= 0 ? "text-[#22C55E]" : "text-[#EF4444]";
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#09090B] w-full relative">
+    <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full relative">
       {/* Background Effects */}
       <AmbientGrid />
       <EvalPipelineCanvas />
@@ -365,7 +366,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               {recentRuns && recentRuns.length > 0 ? (
-                (recentRuns as RecentRun[]).map((run, index) => (
+                recentRuns.map((run: RecentRun, index: number) => (
                   <motion.div 
                     key={run.id} 
                     initial={{ opacity: 0, x: -6 }}
@@ -480,7 +481,7 @@ export default function DashboardPage() {
                                 </span>
                               </div>
                               <span className="bg-red-950/40 text-red-400 border border-red-900/40 font-mono text-[10px] px-1.5 py-0.5 rounded">
-                                {prev > 0 ? `${delta > 0 ? "+" : ""}${delta}%` : "0%"}
+                                {prev > 0 ? `${Number(delta) > 0 ? "+" : ""}${delta}%` : "0%"}
                               </span>
                             </div>
                           </div>

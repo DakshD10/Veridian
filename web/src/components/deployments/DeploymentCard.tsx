@@ -65,7 +65,7 @@ export function DeploymentCard({ deployment, isDetail = false, index = 0 }: { de
           boxShadow: "0 8px 24px rgba(0,0,0,0.4)"
         }}
         onClick={handleClick}
-        className={`bg-[#111113] border border-[#1F1F23] rounded-xl p-6 border-l-[3px] border-l-[#22C55E] group ${!isDetail ? 'cursor-pointer' : ''} transition-all duration-300 w-full`}
+        className={`bg-[#121215] border border-[#1F1F23] rounded-xl p-6 border-l-[3px] border-l-[#22C55E] group ${!isDetail ? 'cursor-pointer' : ''} transition-all duration-300 w-full`}
       >
          <div className="flex justify-between items-start mb-6">
             <div className="space-y-1">
@@ -147,9 +147,20 @@ export function DeploymentCard({ deployment, isDetail = false, index = 0 }: { de
                         </span>
                         <span className="text-[12px] text-[#A1A1AA] font-sans">{run.triggerEvent ?? "Agent run completed"}</span>
                       </div>
-                      <span className={`px-2 py-0.5 text-[10px] font-mono rounded ${getBadgeStyle(badge)}`}>
-                        {badge}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 text-[10px] font-mono rounded ${getBadgeStyle(badge)}`}>
+                          {badge}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/agent?agentRunId=${run.id}`);
+                          }}
+                          className="text-[10px] font-medium text-violet-400 hover:text-violet-300 transition-colors"
+                        >
+                          View report
+                        </button>
+                      </div>
                     </div>
                   );
                 })

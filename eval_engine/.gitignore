@@ -35,3 +35,9 @@ __pycache__
 .cursorignore.mdx
 .cursorignore.mdx
 .cursorignore.mdx
+
+.gitignore
+.gitignore/*
+    !.gitignore
+    !.gitignore/*
+        !.gitignore

@@ -5,13 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { AgentTraceViewer } from "@/components/agent/AgentTraceViewer";
-import { AgentRunCard } from "@/components/agent/AgentRunCard";
 import { AgentPipelineHeader } from "@/components/agent/AgentPipelineHeader";
 import { LiveTimer } from "@/components/agent/LiveTimer";
 import { useAgentRunPolling } from "@/hooks/useAgentRunPolling";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AgentMetricsPanel } from "@/components/agent/AgentMetricsPanel";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { RootCauseCard } from "@/components/agent/RootCauseCard";
 
 // Add CSS for regression pulse animation
 const regressionPulseCSS = `
@@ -86,14 +86,16 @@ function AgentContent() {
     agentRuns.find((run) => run.id === activeRunId) ?? agentRuns[0];
 
   const activeRunData = activeRun as
-    | {
+      | {
         status?: string;
         regressionFound?: boolean;
         previousScore?: number | null;
         newScore?: number | null;
         reportSummary?: string | null;
+        rootCause?: string | null;
         decision?: string | null;
         deployment?: { threshold?: number };
+        evalRun?: { id?: string | null } | null;
         agentTrace?: Array<{
           node: string;
           timestamp: string;
@@ -118,18 +120,38 @@ function AgentContent() {
   }, [activeRunData?.status]);
 
   const deploymentThreshold = activeRunData?.deployment?.threshold;
+  const evalRunId = activeRunData?.evalRun?.id;
+  const canViewReport = Boolean(
+    evalRunId ||
+      activeRunData?.reportSummary ||
+      activeRunData?.agentTrace?.some(
+        (step) => step.node === "generate_report" && step.status === "done"
+      )
+  );
+
+  const handleViewReport = () => {
+    if (evalRunId) {
+      router.push(`/runs/${evalRunId}`);
+      return;
+    }
+
+    const generateReportNode = document.getElementById("node-generate_report");
+    if (generateReportNode) {
+      generateReportNode.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
 
   if (listLoading || (activeRunId && runLoading)) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#09090B] w-full">
-        <Skeleton className="h-56 w-full bg-[#111113]/50" />
+      <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full">
+        <Skeleton className="h-56 w-full bg-[#121215]/50" />
         <div className="max-w-[1100px] mx-auto px-6 py-5">
           <div className="flex gap-5">
             <div className="flex-1">
-              <Skeleton className="h-[400px] w-full bg-[#111113]/50 rounded-xl" />
+              <Skeleton className="h-[400px] w-full bg-[#121215]/50 rounded-xl" />
             </div>
             <div className="w-[340px]">
-              <Skeleton className="h-[400px] w-full bg-[#111113]/50 rounded-xl" />
+              <Skeleton className="h-[400px] w-full bg-[#121215]/50 rounded-xl" />
             </div>
           </div>
         </div>
@@ -155,7 +177,7 @@ function AgentContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090B] w-full">
+    <div className="min-h-screen bg-[#0A0A0D] w-full">
       {/* Completion Flash */}
       <AnimatePresence>
         {showCompletionFlash && (
@@ -170,7 +192,7 @@ function AgentContent() {
       </AnimatePresence>
 
       {/* ZONE 1 — COMMAND BAR */}
-      <div className="sticky top-0 z-50 h-14 bg-[#09090B]/95 backdrop-blur-md border-b border-[#1A1A1E] flex items-center justify-between px-6">
+      <div className="sticky top-0 z-50 h-14 bg-[#0A0A0D]/95 backdrop-blur-md border-b border-[#1A1A1E] flex items-center justify-between px-6">
         {/* LEFT SIDE: Breadcrumb */}
         <div className="flex items-center gap-1 text-[12px] font-mono">
           <span className="text-[#52525B]">Deployments</span>
@@ -208,7 +230,16 @@ function AgentContent() {
           }`}>
             {toRunStatus(activeRunData?.status || "")}
           </div>
-          <button className="border border-[#27272A] text-[#A1A1AA] text-[11px] font-mono px-3 py-1 rounded hover:border-violet-500/40 hover:text-[#FAFAFA] transition">
+          <button
+            type="button"
+            onClick={handleViewReport}
+            disabled={!canViewReport}
+            className={`border text-[11px] font-mono px-3 py-1 rounded transition ${
+              canViewReport
+                ? "border-[#27272A] text-[#A1A1AA] hover:border-violet-500/40 hover:text-[#FAFAFA]"
+                : "border-[#1F1F23] text-[#52525B] cursor-not-allowed"
+            }`}
+          >
             View Report →
           </button>
         </div>
@@ -347,7 +378,26 @@ function AgentContent() {
           <div className="text-[11px] font-mono text-[#52525B] uppercase tracking-widest mb-4">
             Execution Trace
           </div>
-          <AgentTraceViewer agentTrace={activeRunData?.agentTrace ?? []} />
+          <AgentTraceViewer
+            agentTrace={activeRunData?.agentTrace ?? []}
+            rootCause={activeRunData?.rootCause ?? null}
+            reportSummary={activeRunData?.reportSummary ?? null}
+          />
+          {activeRunData?.status === "completed" && (
+            <div className="mt-4">
+              <RootCauseCard
+                rootCause={activeRunData?.rootCause}
+                failureClusters={
+                  activeRunData?.agentTrace
+                    ?.find((n) => n.node === "root_cause_analysis")
+                    ?.summary
+                    ? []
+                    : []
+                }
+                regressionFound={activeRunData?.regressionFound ?? false}
+              />
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN — LIVE METRICS PANEL */}
@@ -374,10 +424,10 @@ export default function AgentPage() {
           <div className="max-w-[1100px] mx-auto">
             <div className="flex gap-5">
               <div className="flex-1">
-                <Skeleton className="h-[400px] w-full bg-[#111113]/50 rounded-xl" />
+                <Skeleton className="h-[400px] w-full bg-[#121215]/50 rounded-xl" />
               </div>
               <div className="w-[340px]">
-                <Skeleton className="h-[400px] w-full bg-[#111113]/50 rounded-xl" />
+                <Skeleton className="h-[400px] w-full bg-[#121215]/50 rounded-xl" />
               </div>
             </div>
           </div>

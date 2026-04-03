@@ -2,8 +2,15 @@
 import time
 import os
 from groq import Groq
+from dotenv import load_dotenv
 
-_client = Groq(api_key=os.environ["GROQ_API_KEY"])
+load_dotenv()
+
+# Handle missing API key gracefully for import testing
+if "GROQ_API_KEY" in os.environ and os.environ["GROQ_API_KEY"]:
+    _client = Groq(api_key=os.environ["GROQ_API_KEY"])
+else:
+    _client = None
 
 MIN_GAP_SECONDS = 2.5
 _last_call_time = 0.0
@@ -15,6 +22,9 @@ def call_groq(model_id: str, prompt: str, system: str = "", temperature: float =
     Returns { output, latency_ms }.
     Raises RuntimeError on API failure — caller must handle.
     """
+    if not _client:
+        raise RuntimeError("GROQ_API_KEY not configured. Please set environment variable.")
+    
     global _last_call_time
 
     elapsed = time.time() - _last_call_time

@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, Loader2, Shield } from "lucide-react";
+import { toast } from "sonner";
 import { TestCaseTable } from "@/components/suites/TestCaseTable";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useModels } from "@/hooks/useModels";
 
 interface SuiteTestCase {
   id: string;
@@ -25,15 +29,19 @@ interface SuiteDetail {
 function PageSkeleton() {
   return (
     <div className="flex flex-col min-h-screen bg-[#09090B] w-full p-8 gap-6">
-      <Skeleton className="h-[100px] w-full bg-[#111113]/50 rounded-lg" />
-      <Skeleton className="h-[400px] w-full bg-[#111113]/50 rounded-lg" />
+  <Skeleton className="h-25 w-full bg-[#111113]/50 rounded-lg" />
+  <Skeleton className="h-100 w-full bg-[#111113]/50 rounded-lg" />
     </div>
   );
 }
 
 export default function SuiteDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
+  const [redTeamModelId, setRedTeamModelId] = useState("");
+  const [isRedTeaming, setIsRedTeaming] = useState(false);
+  const { data: models } = useModels();
 
   const {
     data: suite,
@@ -48,6 +56,27 @@ export default function SuiteDetailPage() {
     },
     enabled: !!id,
   });
+
+  async function handleRedTeam(suiteId: string) {
+    if (!redTeamModelId || isRedTeaming) return;
+    setIsRedTeaming(true);
+
+    try {
+      const res = await fetch(`/api/suites/${suiteId}/red-team`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelId: redTeamModelId }),
+      });
+
+      if (!res.ok) throw new Error("Failed to start red team");
+
+      const { redTeamRunId } = await res.json();
+      router.push(`/red-team/${redTeamRunId}`);
+    } catch {
+      toast.error("Failed to start red team run");
+      setIsRedTeaming(false);
+    }
+  }
 
   if (isLoading) return <PageSkeleton />;
 
@@ -103,14 +132,63 @@ export default function SuiteDetailPage() {
         </div>
       </div>
 
-      <div className="p-8 flex flex-col w-full flex-grow pb-16">
-        {!suite.testCases || suite.testCases.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-            <p className="text-sm text-muted-foreground">No test cases yet. Add your first test case below.</p>
+  <div className="p-8 flex flex-col w-full grow pb-16">
+        <div className="flex flex-col gap-3 p-4 mb-6 bg-[#111113] border border-[#27272A] rounded-lg">
+          <div className="flex items-center gap-2">
+            <Shield size={14} className="text-red-400" />
+            <span className="text-sm font-medium text-[#FAFAFA]">Red Team Analysis</span>
           </div>
-        ) : (
-          <TestCaseTable suiteId={suite.id} testCases={suite.testCases} />
-        )}
+          <p className="text-xs text-[#71717A]">
+            Adversarially test this suite — find vulnerabilities standard eval misses.
+          </p>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <select
+                value={redTeamModelId}
+                onChange={(e) => setRedTeamModelId(e.target.value)}
+                className="appearance-none bg-[#18181B] border border-[#27272A] rounded-md px-3 py-2 pr-8 text-sm text-[#A1A1AA] focus:outline-none focus:border-red-500/40"
+                disabled={suite.testCases.length === 0}
+                title={suite.testCases.length === 0 ? "Add test cases first" : undefined}
+              >
+                <option value="">Select model to attack</option>
+                {models
+                  ?.filter((model) => model.provider !== "custom")
+                  .map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label}
+                    </option>
+                  ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleRedTeam(suite.id)}
+              disabled={!redTeamModelId || isRedTeaming || suite.testCases.length === 0}
+              title={suite.testCases.length === 0 ? "Add test cases first" : undefined}
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border border-red-500/40 hover:bg-red-950/20 text-red-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isRedTeaming ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <Shield size={14} />
+                  Red Team
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <TestCaseTable suiteId={suite.id} testCases={suite.testCases || []} />
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ export function SimulateModal({ open, onClose }: { open: boolean, onClose: () =>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
        <div className="absolute inset-0 bg-black/60" style={{ backdropFilter: "blur(4px)" }} onClick={onClose} />
        
-       <div className="relative bg-[#09090B] border border-[#1F1F23] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200">
+       <div className="relative bg-[#0A0A0D] border border-[#1F1F23] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex justify-between items-center mb-6">
              <h2 className="font-sans text-[18px] font-bold text-[#FAFAFA] tracking-tight">Simulate Version Change</h2>
              <button onClick={onClose} className="text-[#52525B] hover:text-[#FAFAFA] transition-colors cursor-pointer">
@@ -31,7 +31,7 @@ export function SimulateModal({ open, onClose }: { open: boolean, onClose: () =>
              </p>
              <div className="flex flex-col gap-2">
                 <label className="font-sans text-[12px] font-medium text-[#71717A]">Target Model ID</label>
-                <div className="w-full bg-[#111113] border border-[#27272A] rounded-lg px-4 py-2 font-mono text-[13px] text-[#FAFAFA]">
+                <div className="w-full bg-[#121215] border border-[#27272A] rounded-lg px-4 py-2 font-mono text-[13px] text-[#FAFAFA]">
                    llama3-120b-instruct-rc1
                 </div>
              </div>

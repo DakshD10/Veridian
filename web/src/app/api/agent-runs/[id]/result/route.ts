@@ -9,6 +9,7 @@ const ResultSchema = z.object({
   regression_found: z.boolean(),
   decision:         z.string(),
   report_summary:   z.string(),
+  root_cause:       z.string().optional(),
   agent_trace:      z.array(z.any()),
   scored_results:   z.array(z.any()),
 });

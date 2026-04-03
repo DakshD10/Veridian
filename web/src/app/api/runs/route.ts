@@ -19,6 +19,7 @@ const StartRunBodySchema = z.object({
   suiteId: z.string().min(1, "suiteId is required"),
   modelId: z.string().min(1, "modelId is required"),
   modelVersion: z.string().optional(),
+  evalMode: z.enum(["standard", "rigorous", "brutal"]).optional(),
 });
 
 function getErrorMessage(error: unknown): string {
@@ -86,12 +87,19 @@ export async function POST(request: NextRequest) {
         suiteId: data.suiteId,
         modelId: data.modelId,
         modelVersion: data.modelVersion,
+        evalMode: data.evalMode ?? "standard",
         status: "PENDING",
       },
       select: { id: true },
     });
 
-    void startEvalRun(data.suiteId, data.modelId, data.modelVersion, run.id).catch(
+    void startEvalRun(
+      data.suiteId,
+      data.modelId,
+      data.modelVersion,
+      data.evalMode ?? "standard",
+      run.id
+    ).catch(
       (error) => {
         console.error("[runs.route] startEvalRun failed:", error);
       }

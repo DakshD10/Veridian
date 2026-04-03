@@ -12,7 +12,6 @@ export function SuiteCard({ suite, index = 0 }: { suite: Suite; index?: number }
   const cardRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
-  const [sheenPosition, setSheenPosition] = useState({ x: 50, y: 50 });
 
   const domain = suite.domain ?? "general";
 
@@ -29,15 +28,10 @@ export function SuiteCard({ suite, index = 0 }: { suite: Suite; index?: number }
 
     setTilt({ rotateX, rotateY });
 
-    // Calculate sheen position based on cursor angle
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setSheenPosition({ x, y });
   };
 
   const handleMouseLeave = () => {
     setTilt({ rotateX: 0, rotateY: 0 });
-    setSheenPosition({ x: 50, y: 50 });
   };
 
   return (

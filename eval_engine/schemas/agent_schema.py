@@ -19,9 +19,12 @@ class AgentRunRequest(BaseModel):
     agent_run_id: str
     deployment_id: str
     trigger_event: str
+    trigger_source: Optional[str] = "manual"
     new_model_id: str
     previous_score: float
     threshold: float
     callback_url: str
     slack_webhook_url: Optional[str] = None
+    slack_channel_id: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
     eval_suite: EvalSuitePayload

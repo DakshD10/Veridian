@@ -35,7 +35,7 @@ export function StatCard({ label, value, deltaText, deltaColor, icon, sparkline,
           damping: 20,
         },
       }}
-      className={`relative overflow-hidden bg-[#111113] border border-[#1F1F23] rounded-lg px-[24px] py-[20px] flex flex-col gap-3 h-[140px] cursor-pointer transition-colors duration-200 ${
+      className={`relative overflow-hidden bg-[#121215] border border-[#1F1F23] rounded-lg px-[24px] py-[20px] flex flex-col gap-3 h-[140px] cursor-pointer transition-colors duration-200 ${
         label === "REGRESSIONS" && typeof value === "number" && value > 0 
           ? "border-red-900/30" 
           : label === "REGRESSIONS" && typeof value === "number" && value === 0 

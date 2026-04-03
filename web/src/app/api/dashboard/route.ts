@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 function getErrorMessage(error: unknown): string {
@@ -6,7 +6,7 @@ function getErrorMessage(error: unknown): string {
   return "Unknown error";
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const totalSuites = await prisma.evalSuite.count();
     const totalRuns = await prisma.evalRun.count();

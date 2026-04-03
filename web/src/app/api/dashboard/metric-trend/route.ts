@@ -6,6 +6,7 @@ const VALID_METRICS = [
   "hallucination",
   "faithfulness",
   "correctness",
+  "consistency",
 ] as const;
 
 type MetricName = (typeof VALID_METRICS)[number];

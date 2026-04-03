@@ -20,14 +20,14 @@ const CustomizedDot = (props: { cx?: number; cy?: number; value?: number }) => {
 export function QualityTrendChart({ data }: { data: TrendDataPoint[] }) {
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-full min-h-[280px] bg-[#111113] border border-[#1F1F23] rounded-lg p-6 flex flex-col items-center justify-center">
+      <div className="w-full h-full min-h-[280px] bg-[#121215] border border-[#1F1F23] rounded-lg p-6 flex flex-col items-center justify-center">
         <span className="text-[#52525B] font-sans">No data available</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-[#111113] border border-[#1F1F23] rounded-lg p-6 flex flex-col gap-6">
+    <div className="w-full bg-[#121215] border border-[#1F1F23] rounded-lg p-6 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h3 className="font-sans font-semibold text-sm text-[#FAFAFA]">Quality Trend</h3>
         <span className="font-sans text-xs text-[#71717A]">Medical Triage Suite · Last 30 days</span>

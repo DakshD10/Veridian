@@ -16,6 +16,7 @@ def invoke(state: WatcherState) -> WatcherState:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "summary": (
             f"Trigger received: {state['trigger_event']}. "
+            f"Source: {state.get('trigger_source', 'manual')}. "
             f"New model: {state['new_model_id']}. "
             f"Threshold: {state['threshold']}"
         ),

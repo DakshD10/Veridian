@@ -13,25 +13,7 @@ out
 .cursor
 .cursorignore
 .cursorignore.md
-.cursorignore.txt
-.cursorignore.yml
-.cursorignore.yaml
-.cursorignore.json
-.cursorignore.jsonc
-.cursorignore.json5
-.cursorignore.jsonp
-.cursorignore.js
-.cursorignore.jsx
-.cursorignore.ts
-.cursorignore.tsx
-.cursorignore.vue
-.cursorignore.svelte
-.cursorignore.astro
-.cursorignore.mdx
-.cursorignore.mdx
-.cursorignore.mdx
-.cursorignore.mdx
-.cursorignore.mdx
+
 
 # Global ignores
 .env
@@ -41,3 +23,10 @@ out
 # Subfolder env files
 web/.env
 eval_engine/.env
+audit.txt
+CONTEXT.md
+CONTEXT(Truth).md       
+REMEDIATION.md
+
+
+web/src/services/report.service.ts.old

@@ -36,9 +36,9 @@ type CreateDeploymentFormOutput = z.output<typeof CreateDeploymentSchema>;
 
 function PageSkeleton() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#09090B] w-full p-8 gap-6">
-      <Skeleton className="h-[100px] w-full bg-[#111113]/50 rounded-lg" />
-      <Skeleton className="h-[320px] w-full bg-[#111113]/50 rounded-lg" />
+    <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full p-8 gap-6">
+      <Skeleton className="h-[100px] w-full bg-[#121215]/50 rounded-lg" />
+      <Skeleton className="h-[320px] w-full bg-[#121215]/50 rounded-lg" />
     </div>
   );
 }
@@ -142,7 +142,7 @@ export default function NewDeploymentPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#09090B] w-full p-8">
+    <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full p-8">
       <div className="max-w-2xl mx-auto w-full">
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-sans text-[24px] font-bold text-[#FAFAFA]">Watch New Deployment</h1>
@@ -153,7 +153,7 @@ export default function NewDeploymentPage() {
 
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6 bg-[#111113] border border-[#1F1F23] rounded-xl p-8"
+          className="flex flex-col gap-6 bg-[#121215] border border-[#1F1F23] rounded-xl p-8"
         >
           <div className="flex flex-col gap-1.5">
             <label className="font-sans text-[12px] font-medium text-[#52525B] uppercase tracking-wider">
@@ -162,7 +162,7 @@ export default function NewDeploymentPage() {
             <input
               {...form.register("name")}
               placeholder="e.g. Healthcare Prod V4"
-              className="w-full bg-[#09090B] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#8B5CF6] font-sans"
+              className="w-full bg-[#0A0A0D] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#8B5CF6] font-sans"
             />
             {form.formState.errors.name && (
               <p className="text-xs text-[#EF4444]">{form.formState.errors.name.message}</p>
@@ -175,7 +175,7 @@ export default function NewDeploymentPage() {
             </label>
             <select
               {...form.register("suiteId")}
-              className="w-full bg-[#09090B] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] focus:outline-none focus:border-[#8B5CF6] font-sans"
+              className="w-full bg-[#0A0A0D] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] focus:outline-none focus:border-[#8B5CF6] font-sans"
             >
               <option value="">Select a suite...</option>
               {suites.map((suite) => (
@@ -195,7 +195,7 @@ export default function NewDeploymentPage() {
             </label>
             <select
               {...form.register("currentModel")}
-              className="w-full bg-[#09090B] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] focus:outline-none focus:border-[#8B5CF6] font-sans"
+              className="w-full bg-[#0A0A0D] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] focus:outline-none focus:border-[#8B5CF6] font-sans"
             >
               <option value="">Select a model...</option>
               {models.map((model) => (
@@ -219,7 +219,7 @@ export default function NewDeploymentPage() {
               min="0"
               max="1"
               {...form.register("threshold", { valueAsNumber: true })}
-              className="w-full bg-[#09090B] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#8B5CF6] font-sans"
+              className="w-full bg-[#0A0A0D] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#8B5CF6] font-sans"
             />
             {form.formState.errors.threshold && (
               <p className="text-xs text-[#EF4444]">{form.formState.errors.threshold.message}</p>
@@ -233,7 +233,7 @@ export default function NewDeploymentPage() {
             <input
               {...form.register("slackWebhookUrl")}
               placeholder="https://hooks.slack.com/..."
-              className="w-full bg-[#09090B] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#8B5CF6] font-sans"
+              className="w-full bg-[#0A0A0D] border border-[#27272A] rounded-[6px] h-11 px-4 text-[14px] text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#8B5CF6] font-sans"
             />
             {form.formState.errors.slackWebhookUrl && (
               <p className="text-xs text-[#EF4444]">{form.formState.errors.slackWebhookUrl.message}</p>

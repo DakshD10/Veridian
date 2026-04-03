@@ -8,9 +8,27 @@ export interface ModelDataPoint {
   fill: string;
 }
 
-const renderCustomAxisTick = ({ y, payload }: { y?: number; payload?: { value: string } }) => {
+interface CustomAxisTickProps {
+  y?: string | number;
+  payload?: {
+    value?: string | number;
+  };
+}
+
+interface CustomBarLabelProps {
+  x?: string | number;
+  y?: string | number;
+  width?: string | number;
+  height?: string | number;
+  value?: string | number | boolean | null;
+  fill?: string;
+}
+
+const renderCustomAxisTick = ({ y = 0, payload }: CustomAxisTickProps) => {
+  const yPosition = typeof y === "number" ? y : Number(y) || 0;
+
   return (
-    <g transform={`translate(0,${y})`}>
+    <g transform={`translate(0,${yPosition})`}>
       <text x={0} y={0} dy={4} textAnchor="start" fill="#71717A" fontSize={11} className="font-mono">
         {payload?.value}
       </text>
@@ -18,11 +36,15 @@ const renderCustomAxisTick = ({ y, payload }: { y?: number; payload?: { value: s
   );
 };
 
-const renderCustomBarLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number | string; fill?: string }) => {
-  const { x = 0, y = 0, width = 0, height = 0, value, fill } = props;
+const renderCustomBarLabel = ({ x = 0, y = 0, width = 0, height = 0, value, fill }: CustomBarLabelProps) => {
+  const xPosition = typeof x === "number" ? x : Number(x) || 0;
+  const yPosition = typeof y === "number" ? y : Number(y) || 0;
+  const barWidth = typeof width === "number" ? width : Number(width) || 0;
+  const barHeight = typeof height === "number" ? height : Number(height) || 0;
+
   // Position outside the bar on the right
   return (
-    <text x={x + width + 10} y={y + height / 2 + 5} fill={fill || "#FAFAFA"} fontSize={12} fontWeight={700} className="font-mono" textAnchor="start">
+    <text x={xPosition + barWidth + 10} y={yPosition + barHeight / 2 + 5} fill={fill || "#FAFAFA"} fontSize={12} fontWeight={700} className="font-mono" textAnchor="start">
       {value}
     </text>
   );
@@ -31,14 +53,14 @@ const renderCustomBarLabel = (props: { x?: number; y?: number; width?: number; h
 export function ModelComparisonChart({ data }: { data: ModelDataPoint[] }) {
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-full min-h-[280px] bg-[#111113] border border-[#1F1F23] rounded-lg p-6 flex flex-col items-center justify-center">
+      <div className="w-full h-full min-h-[280px] bg-[#121215] border border-[#1F1F23] rounded-lg p-6 flex flex-col items-center justify-center">
         <span className="text-[#52525B] font-sans">No data available</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-[#111113] border border-[#1F1F23] rounded-lg p-6 flex flex-col gap-6">
+    <div className="w-full bg-[#121215] border border-[#1F1F23] rounded-lg p-6 flex flex-col gap-6">
       <h3 className="font-sans font-semibold text-sm text-[#FAFAFA]">Model Comparison</h3>
       <div className="h-[200px] w-full mt-2">
         <ResponsiveContainer width="100%" height="100%">

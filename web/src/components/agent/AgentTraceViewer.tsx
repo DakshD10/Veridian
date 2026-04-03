@@ -1,7 +1,17 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { AGENT_NODE_ORDER, AgentNodeName } from "@/types";
+import {
+  Bell,
+  BookOpen,
+  FileText,
+  GitCompare,
+  Play,
+  Search,
+  Sigma,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 
 // Add CSS for traveling dot animation
 const travelDownCSS = `
@@ -9,6 +19,37 @@ const travelDownCSS = `
   0% { transform: translateY(0); opacity: 1; }
   100% { transform: translateY(28px); opacity: 0; }
 }`;
+
+const NODE_CONFIGS: Array<{
+  name: string;
+  icon: LucideIcon;
+  displayLabel: string;
+}> = [
+  { name: "trigger_received", icon: Zap, displayLabel: "trigger_received" },
+  { name: "load_eval_suite", icon: BookOpen, displayLabel: "load_eval_suite" },
+  { name: "run_model", icon: Play, displayLabel: "run_model" },
+  { name: "score_results", icon: Sigma, displayLabel: "score_results" },
+  { name: "compare_baseline", icon: GitCompare, displayLabel: "compare_baseline" },
+  { name: "root_cause_analysis", icon: Search, displayLabel: "root_cause_analysis" },
+  { name: "generate_report", icon: FileText, displayLabel: "generate_report" },
+  { name: "notify", icon: Bell, displayLabel: "notify" },
+];
+
+const NODE_ICON_MAP: Record<string, LucideIcon> = {
+  trigger_received: Zap,
+  load_eval_suite: BookOpen,
+  run_model: Play,
+  score_results: Sigma,
+  compare_baseline: GitCompare,
+  root_cause_analysis: Search,
+  generate_report: FileText,
+  notify: Bell,
+  load_targets: BookOpen,
+  generate_attacks: Play,
+  execute_attacks: Zap,
+  analyze_vulnerabilities: Search,
+  generate_red_team_report: FileText,
+};
 
 if (typeof window !== 'undefined') {
   const style = document.createElement('style');
@@ -20,18 +61,24 @@ interface AgentTraceStep {
   node: string;
   timestamp: string;
   summary: string;
-  status: "done" | "pending" | "running" | "error";
+  status: string;
   reportSummary?: string | null;
 }
 
 function formatTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  return date.toISOString().split('T')[1].split('.')[0] + ' UTC';
+  const ms = Date.parse(timestamp);
+  if (!Number.isFinite(ms)) return "--:--:-- UTC";
+  const date = new Date(ms);
+  return date.toISOString().split("T")[1].split(".")[0] + " UTC";
 }
 
 function getElapsedTime(current: string, previous?: string): string {
   if (!previous) return "0ms";
-  const diff = new Date(current).getTime() - new Date(previous).getTime();
+  const currentMs = Date.parse(current);
+  const previousMs = Date.parse(previous);
+  if (!Number.isFinite(currentMs) || !Number.isFinite(previousMs)) return "--";
+  const diff = currentMs - previousMs;
+  if (diff < 0) return "--";
   if (diff < 1000) return `${diff}ms`;
   return `${(diff / 1000).toFixed(1)}s`;
 }
@@ -47,19 +94,27 @@ function getStateColor(status: string): string {
 }
 
 function NodeCard({ 
-  node, 
+  node,
+  icon: Icon,
+  displayLabel,
   step, 
   stepNumber, 
   previousTimestamp,
   showConnector,
-  connectorColor 
+  connectorColor,
+  rootCause,
+  reportSummary
 }: {
   node: string;
+  icon: LucideIcon;
+  displayLabel: string;
   step?: AgentTraceStep;
   stepNumber: number;
   previousTimestamp?: string;
   showConnector: boolean;
   connectorColor?: string;
+  rootCause?: string | null;
+  reportSummary?: string | null;
 }) {
   const status = step?.status || "pending";
   const stateColor = getStateColor(status);
@@ -87,6 +142,7 @@ function NodeCard({
 
   return (
     <motion.div
+      id={`node-${node}`}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -134,10 +190,15 @@ function NodeCard({
                     <div className="w-1.5 h-1.5 bg-[#52525B] rounded-full" />
                   </div>
                 )}
+                {(status === "done" || status === "pending") && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Icon size={11} className="text-white/90" />
+                  </div>
+                )}
               </div>
             </div>
             <div className="font-mono font-bold text-[13px] text-[#FAFAFA]">
-              {node.replace(/_/g, " ")}
+              {displayLabel}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -154,7 +215,7 @@ function NodeCard({
 
         {/* CARD BODY */}
         <div className={`px-4 py-3 ${
-          node === "compare_baseline" && regressionInfo ? "bg-red-950/[0.04]" : ""
+          node === "compare_baseline" && regressionInfo ? "bg-red-950/4" : ""
         }`}>
           <div 
             className="text-[12px] text-[#71717A] leading-relaxed"
@@ -176,16 +237,23 @@ function NodeCard({
           )}
 
           {/* Generate Report Expansion */}
-          {node === "generate_report" && isDone && step?.reportSummary && (
+          {node === "generate_report" && isDone && (step?.reportSummary || reportSummary) && (
             <div className="mt-3">
               <div className="bg-[#0A0A0E] border border-[rgba(139,92,246,0.12)] rounded-lg p-3">
                 <div className="text-[9px] font-mono text-violet-500/50 uppercase tracking-widest mb-2">
                   AI Generated Report
                 </div>
                 <div className="italic text-[12px] text-[#A1A1AA] leading-relaxed">
-                  {step.reportSummary}
+                  {step?.reportSummary ?? reportSummary}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Root Cause Expansion */}
+          {node === "root_cause_analysis" && isDone && rootCause && (
+            <div className="mt-2 italic text-[#71717A] text-xs leading-relaxed">
+              {rootCause.length > 120 ? `${rootCause.slice(0, 120)}...` : rootCause}
             </div>
           )}
         </div>
@@ -221,26 +289,50 @@ function NodeCard({
 
 export function AgentTraceViewer({
   agentTrace = [],
+  rootCause,
+  reportSummary,
+  nodeConfig,
+  isRunning,
 }: {
   agentTrace?: AgentTraceStep[];
+  rootCause?: string | null;
+  reportSummary?: string | null;
+  nodeConfig?: Array<{ name: string; label: string }>;
+  isRunning?: boolean;
 }) {
+  const effectiveNodes =
+    nodeConfig?.map((node) => ({
+      name: node.name,
+      displayLabel: node.label,
+      icon: NODE_ICON_MAP[node.name] ?? Play,
+    })) ?? NODE_CONFIGS;
+
+  const nodeOrder = effectiveNodes.map((node) => node.name);
+  const nodeNameSet = new Set(nodeOrder);
+
   const traceMap = new Map(
     agentTrace
-      .filter((step) =>
-        AGENT_NODE_ORDER.includes(step.node as AgentNodeName)
-      )
-      .map((step) => [step.node as AgentNodeName, step])
+      .filter((step) => nodeNameSet.has(step.node))
+      .map((step) => [step.node, step])
   );
+
+  if (isRunning && agentTrace.length > 0) {
+    const latest = agentTrace[agentTrace.length - 1];
+    if (latest && nodeNameSet.has(latest.node)) {
+      traceMap.set(latest.node, latest);
+    }
+  }
 
   return (
     <AnimatePresence mode="popLayout">
       <div className="flex flex-col w-full">
-        {AGENT_NODE_ORDER.map((nodeName, index) => {
+        {nodeOrder.map((nodeName, index) => {
+          const config = effectiveNodes[index];
           const traceData = traceMap.get(nodeName);
-          const previousTimestamp = index > 0 ? traceMap.get(AGENT_NODE_ORDER[index - 1])?.timestamp : undefined;
+          const previousTimestamp = index > 0 ? traceMap.get(nodeOrder[index - 1])?.timestamp : undefined;
           
-          const showConnector = index < AGENT_NODE_ORDER.length - 1;
-          const nextNode = AGENT_NODE_ORDER[index + 1];
+          const showConnector = index < nodeOrder.length - 1;
+          const nextNode = nodeOrder[index + 1];
           const nextTraceData = nextNode ? traceMap.get(nextNode) : undefined;
           
           // Connector color logic
@@ -256,11 +348,15 @@ export function AgentTraceViewer({
             <NodeCard
               key={nodeName}
               node={nodeName}
+              icon={config.icon}
+              displayLabel={config.displayLabel}
               step={traceData}
               stepNumber={index + 1}
               previousTimestamp={previousTimestamp}
               showConnector={showConnector}
               connectorColor={connectorColor}
+              rootCause={rootCause}
+              reportSummary={reportSummary}
             />
           );
         })}

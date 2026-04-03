@@ -16,11 +16,12 @@ export async function GET(
       },
     });
   } catch (error) {
+    console.error("Report generation error:", error);
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json({ error: "Run not found" }, { status: 404 });
     }
     return NextResponse.json(
-      { error: "Failed to generate report" },
+      { error: "Failed to generate report", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

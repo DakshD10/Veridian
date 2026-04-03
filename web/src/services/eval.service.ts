@@ -1,12 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { callModel } from "@/services/model.service";
+import axios, { AxiosError } from "axios";
 
-const METRICS = [
+const DEFAULT_METRICS = [
   "answer_relevancy",
   "hallucination",
   "faithfulness",
   "correctness",
 ] as const;
+
+type EvalMode = "standard" | "rigorous" | "brutal";
+type MetricName = (typeof DEFAULT_METRICS)[number] | "consistency";
+
+function getMetricsForEvalMode(evalMode: EvalMode): MetricName[] {
+  if (evalMode === "rigorous" || evalMode === "brutal") {
+    return [...DEFAULT_METRICS, "consistency"];
+  }
+  return [...DEFAULT_METRICS];
+}
 
 const TEST_RESULT_PASS_THRESHOLD = 0.75;
 const METRIC_PASS_THRESHOLD = 0.5;
@@ -15,6 +26,8 @@ interface ModelResult {
   testCaseId: string;
   actualOutput: string;
   latencyMs: number;
+  consistencyOutputs?: string[];
+  boundaryOutput?: string;
 }
 
 interface ScoredResult {
@@ -22,6 +35,7 @@ interface ScoredResult {
   passed: boolean;
   scores: Record<string, number>;
   reasons: Record<string, string>;
+  severity?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
   overall_score: number;
 }
 
@@ -29,12 +43,152 @@ interface EvalEngineResponse {
   results: ScoredResult[];
 }
 
+const DEFAULT_EVAL_ENGINE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const DEFAULT_EVAL_ENGINE_MAX_RETRIES = 2;
+const DEFAULT_EVAL_ENGINE_RETRY_DELAY_MS = 2000;
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractEvalEngineErrorMessage(error: AxiosError): string {
+  if (error.response) {
+    const status = error.response.status;
+    const statusText = error.response.statusText;
+    const data = error.response.data as
+      | { detail?: string; error?: string }
+      | string
+      | undefined;
+
+    if (typeof data === "string" && data.trim().length > 0) {
+      return `Eval engine returned ${status} ${statusText}: ${data}`;
+    }
+    if (data && typeof data === "object") {
+      const detail = data.detail ?? data.error;
+      if (detail) {
+        return `Eval engine returned ${status} ${statusText}: ${detail}`;
+      }
+    }
+    return `Eval engine returned ${status} ${statusText}`;
+  }
+
+  if (error.code === "ECONNABORTED") {
+    return "Eval engine request timed out. Increase EVAL_ENGINE_TIMEOUT_MS or reduce suite size/eval intensity.";
+  }
+
+  if (error.message) {
+    return `Eval engine request failed: ${error.message}`;
+  }
+
+  return "Eval engine request failed";
+}
+
+function isRetryableAxiosError(error: AxiosError): boolean {
+  if (!error.response) {
+    return true; // network/timeout-level failures
+  }
+
+  const status = error.response.status;
+  return status >= 500 || status === 429;
+}
+
+async function postEvaluateWithRetry(
+  evalEngineUrl: string,
+  requestBody: unknown
+): Promise<EvalEngineResponse> {
+  const timeoutMs = parsePositiveInt(
+    process.env.EVAL_ENGINE_TIMEOUT_MS,
+    DEFAULT_EVAL_ENGINE_TIMEOUT_MS
+  );
+  const maxRetries = parsePositiveInt(
+    process.env.EVAL_ENGINE_MAX_RETRIES,
+    DEFAULT_EVAL_ENGINE_MAX_RETRIES
+  );
+  const retryDelayMs = parsePositiveInt(
+    process.env.EVAL_ENGINE_RETRY_DELAY_MS,
+    DEFAULT_EVAL_ENGINE_RETRY_DELAY_MS
+  );
+
+  const baseUrl = evalEngineUrl.replace(/\/$/, "");
+  const endpoints = [`${baseUrl}/evaluate`];
+  try {
+    const parsed = new URL(baseUrl);
+    if (parsed.hostname === "localhost") {
+      parsed.hostname = "127.0.0.1";
+      const ipv4Endpoint = `${parsed.toString().replace(/\/$/, "")}/evaluate`;
+      if (!endpoints.includes(ipv4Endpoint)) {
+        endpoints.push(ipv4Endpoint);
+      }
+    }
+  } catch {
+    // Keep the original endpoint only when URL parsing fails.
+  }
+
+  let lastError: AxiosError | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    for (let endpointIndex = 0; endpointIndex < endpoints.length; endpointIndex += 1) {
+      const endpoint = endpoints[endpointIndex];
+
+      try {
+        const response = await axios.post<EvalEngineResponse>(endpoint, requestBody, {
+          headers: { "Content-Type": "application/json" },
+          timeout: timeoutMs,
+        });
+        return response.data;
+      } catch (error) {
+        if (!axios.isAxiosError(error)) {
+          throw error;
+        }
+
+        lastError = error;
+
+        const hasMoreEndpoints = endpointIndex < endpoints.length - 1;
+        const hasMoreAttempts = attempt < maxRetries;
+        const shouldRetry = isRetryableAxiosError(error) && (hasMoreEndpoints || hasMoreAttempts);
+        if (!shouldRetry) {
+          throw new Error(extractEvalEngineErrorMessage(error));
+        }
+
+        if (hasMoreEndpoints) {
+          continue;
+        }
+      }
+    }
+
+    const backoffMs = retryDelayMs * (attempt + 1);
+    await sleep(backoffMs);
+  }
+
+  if (lastError) {
+    throw new Error(extractEvalEngineErrorMessage(lastError));
+  }
+
+  throw new Error("Eval engine request failed after retries");
+}
+
+function buildBoundaryCasePrompt(input: string): string {
+  return `Boundary-case variant: ${input}
+
+Answer conservatively and explicitly flag uncertainty where assumptions are required.`;
+}
+
 export async function startEvalRun(
   suiteId: string,
   modelId: string,
   modelVersion?: string,
+  evalMode: EvalMode = "standard",
   existingRunId?: string
 ) {
+  const metrics = getMetricsForEvalMode(evalMode);
+
   const evalRun = existingRunId
     ? await prisma.evalRun.findUnique({
         where: { id: existingRunId },
@@ -45,6 +199,7 @@ export async function startEvalRun(
           suiteId,
           modelId,
           modelVersion,
+          evalMode,
           status: "PENDING",
         },
         select: { id: true },
@@ -89,16 +244,54 @@ export async function startEvalRun(
     const modelResults: ModelResult[] = [];
 
     for (const testCase of testCases) {
-      const { output, latencyMs } = await callModel(
-        modelId,
-        testCase.input,
-        testCase.context ?? undefined
+      if (evalMode === "standard") {
+        const { output, latencyMs } = await callModel(
+          modelId,
+          testCase.input,
+          testCase.context ?? undefined
+        );
+
+        modelResults.push({
+          testCaseId: testCase.id,
+          actualOutput: output,
+          latencyMs,
+        });
+        continue;
+      }
+
+      // Rigorous/Brutal: run 3 stability passes for consistency analysis.
+      const consistencyPasses: Array<{ output: string; latencyMs: number }> = [];
+      for (let i = 0; i < 3; i += 1) {
+        const pass = await callModel(
+          modelId,
+          testCase.input,
+          testCase.context ?? undefined
+        );
+        consistencyPasses.push(pass);
+      }
+
+      let boundaryOutput: string | undefined;
+      if (evalMode === "brutal") {
+        const boundaryPrompt = buildBoundaryCasePrompt(testCase.input);
+        const boundary = await callModel(
+          modelId,
+          boundaryPrompt,
+          testCase.context ?? undefined
+        );
+        boundaryOutput = boundary.output;
+      }
+
+      const avgLatencyMs = Math.round(
+        consistencyPasses.reduce((sum, pass) => sum + pass.latencyMs, 0) /
+          Math.max(consistencyPasses.length, 1)
       );
 
       modelResults.push({
         testCaseId: testCase.id,
-        actualOutput: output,
-        latencyMs,
+        actualOutput: consistencyPasses[0]?.output ?? "",
+        latencyMs: avgLatencyMs,
+        consistencyOutputs: consistencyPasses.map((pass) => pass.output),
+        boundaryOutput,
       });
     }
 
@@ -125,26 +318,15 @@ export async function startEvalRun(
           expected_output: testCase.expectedOutput,
           context: testCase.context,
           actual_output: modelResult.actualOutput,
+          consistency_outputs: modelResult.consistencyOutputs ?? null,
+          boundary_output: modelResult.boundaryOutput ?? null,
         };
       }),
-      metrics: METRICS,
+      metrics,
+      eval_mode: evalMode,
     };
 
-    const response = await fetch(`${evalEngineUrl.replace(/\/$/, "")}/evaluate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Eval engine returned status ${response.status}: ${response.statusText}`
-      );
-    }
-
-    const scoredResults = (await response.json()) as EvalEngineResponse;
+    const scoredResults = await postEvaluateWithRetry(evalEngineUrl, requestBody);
     const scoredResultsById = new Map(
       scoredResults.results.map((result) => [result.id, result] as const)
     );
@@ -170,6 +352,7 @@ export async function startEvalRun(
               modelOutput: string;
               scores: Record<string, number>;
               reasons: Record<string, string>;
+              severity?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
               overallScore: number;
               passed: boolean;
               latencyMs: number;
@@ -208,6 +391,7 @@ export async function startEvalRun(
             modelOutput: modelResult.actualOutput,
             scores: scoredResult.scores,
             reasons: scoredResult.reasons,
+            severity: scoredResult.severity,
             overallScore: scoredResult.overall_score,
             passed: scoredResult.overall_score >= TEST_RESULT_PASS_THRESHOLD,
             latencyMs: modelResult.latencyMs,
@@ -215,7 +399,7 @@ export async function startEvalRun(
         });
 
         await txUnsafe.metricScore.createMany({
-          data: METRICS.map((metricName) => ({
+          data: metrics.map((metricName) => ({
             testResultId: testResult.id,
             metricName,
             score: scoredResult.scores[metricName] ?? 0,

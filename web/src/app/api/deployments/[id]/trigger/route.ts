@@ -10,6 +10,7 @@ const ParamsSchema = z.object({
 const TriggerBodySchema = z.object({
   newModelId: z.string().min(1, "newModelId is required"),
   triggerEvent: z.string().min(1, "triggerEvent is required"),
+  triggerSource: z.enum(["manual", "slack", "telegram"]).optional(),
 });
 
 function getErrorMessage(error: unknown): string {
@@ -35,7 +36,12 @@ export async function POST(
       return NextResponse.json({ error: "Deployment not found" }, { status: 404 });
     }
 
-    const result = await triggerAgentRun(id, data.newModelId, data.triggerEvent);
+    const result = await triggerAgentRun(
+      id,
+      data.newModelId,
+      data.triggerEvent,
+      data.triggerSource ?? "manual"
+    );
 
     await prisma.watchedDeployment.update({
       where: { id },

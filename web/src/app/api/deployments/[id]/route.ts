@@ -12,6 +12,8 @@ const UpdateDeploymentSchema = z.object({
   currentModel: z.string().optional(),
   threshold: z.number().min(0).max(1).optional(),
   slackWebhookUrl: z.union([z.string().url(), z.literal("")]).optional(),
+  slackChannelId: z.union([z.string(), z.null(), z.literal("")]).optional(),
+  telegramChatId: z.union([z.string(), z.null(), z.literal("")]).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -98,6 +100,10 @@ export async function PUT(
         threshold: data.threshold,
         slackWebhookUrl:
           data.slackWebhookUrl === "" ? null : data.slackWebhookUrl,
+        slackChannelId:
+          data.slackChannelId === "" ? null : (data.slackChannelId ?? undefined),
+        telegramChatId:
+          data.telegramChatId === "" ? null : (data.telegramChatId ?? undefined),
         isActive: data.isActive,
       },
       include: {

@@ -4,10 +4,14 @@ load_dotenv()
 from fastapi import FastAPI
 from routers.evaluate import router as evaluate_router
 from routers.agent import router as agent_router
+from routers.suite_generate import router as suite_generate_router
+from routers.red_team import router as red_team_router
 
 app = FastAPI(title="Veridian Eval Engine")
 app.include_router(evaluate_router)
 app.include_router(agent_router)
+app.include_router(suite_generate_router)
+app.include_router(red_team_router)
 
 @app.get("/health")
 def health():
