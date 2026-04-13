@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
 const QualityTrendQuerySchema = z.object({
-  suiteId: z.string().min(1, "suiteId is required"),
+  suiteId: z.string().min(1, "suiteId is required").optional(),
   days: z
     .preprocess(
       (value) => (typeof value === "string" && value.length > 0 ? Number(value) : 30),
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     const runs = await prisma.evalRun.findMany({
       where: {
-        suiteId: query.suiteId,
+        ...(query.suiteId ? { suiteId: query.suiteId } : {}),
         status: "COMPLETED",
         overallScore: { not: null },
         createdAt: { gte: since },

@@ -99,7 +99,9 @@ export default function DashboardPage() {
   } = useSuites();
 
   const suiteList = suites as SuiteListItem[];
-  const selectedSuiteId = suiteList[0]?.id;
+  const selectedSuiteId = suiteList
+    .slice()
+    .sort((a, b) => (b._count?.runs ?? 0) - (a._count?.runs ?? 0))[0]?.id;
 
   const {
     data: stats,
@@ -140,13 +142,15 @@ export default function DashboardPage() {
   const isLoading =
     suitesLoading ||
     statsLoading ||
-    (selectedSuiteId ? trendLoading || comparisonLoading : false) ||
+    trendLoading ||
+    comparisonLoading ||
     recentRunsLoading;
 
   const isError =
     suitesError ||
     statsError ||
-    (selectedSuiteId ? trendError || comparisonError : false);
+    trendError ||
+    comparisonError;
 
   if (isLoading) return <LoadingState />;
 

@@ -73,8 +73,8 @@ export async function triggerAgentRun(
     threshold: deployment.threshold,
     callback_url: callbackUrl,
     slack_webhook_url: fullDeployment?.slackWebhookUrl,
-  slack_channel_id: fullDeployment?.slackChannelId,
-  telegram_chat_id: fullDeployment?.telegramChatId,
+    slack_channel_id: fullDeployment?.slackChannelId,
+    telegram_chat_id: fullDeployment?.telegramChatId,
     eval_suite: {
       id: deployment.suite.id,
       name: deployment.suite.name,

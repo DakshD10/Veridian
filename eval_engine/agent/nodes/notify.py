@@ -3,6 +3,7 @@ import httpx
 import asyncio
 import logging
 import os
+from urllib.parse import urlparse
 from datetime import datetime, timezone
 from ..state import WatcherState
 
@@ -67,10 +68,11 @@ def invoke(state: WatcherState) -> WatcherState:
                 }
 
                 async def _notify_slack():
-                    web_app_url = os.getenv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
+                    parsed = urlparse(callback_url)
+                    web_app_url = f"{parsed.scheme}://{parsed.netloc}"
                     async with httpx.AsyncClient(timeout=15.0) as client:
                         r = await client.post(
-                            f"{web_app_url.rstrip('/')}/api/slack/notify",
+                            f"{web_app_url}/api/slack/notify",
                             json=slack_payload,
                         )
                         return r.status_code < 300
@@ -87,10 +89,11 @@ def invoke(state: WatcherState) -> WatcherState:
                 }
 
                 async def _notify_telegram():
-                    web_app_url = os.getenv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
+                    parsed = urlparse(callback_url)
+                    web_app_url = f"{parsed.scheme}://{parsed.netloc}"
                     async with httpx.AsyncClient(timeout=15.0) as client:
                         r = await client.post(
-                            f"{web_app_url.rstrip('/')}/api/telegram/notify",
+                            f"{web_app_url}/api/telegram/notify",
                             json=telegram_payload,
                         )
                         return r.status_code < 300

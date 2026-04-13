@@ -1,56 +1,46 @@
-# eval_engine/models/groq_client.py
+"""
+groq_client.py — thin wrapper around GroqPool singleton.
+
+Preserves the original call signature so every existing caller works
+without modifications:
+    call_groq(model_id, prompt, system="", temperature=0.1) -> dict
+
+The throttle and key-rotation logic now lives in provider_pool.GroqPool.
+"""
+
 import time
-import os
-from groq import Groq
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Handle missing API key gracefully for import testing
-if "GROQ_API_KEY" in os.environ and os.environ["GROQ_API_KEY"]:
-    _client = Groq(api_key=os.environ["GROQ_API_KEY"])
-else:
-    _client = None
-
-MIN_GAP_SECONDS = 2.5
-_last_call_time = 0.0
+from provider_pool import groq_pool
 
 
-def call_groq(model_id: str, prompt: str, system: str = "", temperature: float = 0.1) -> dict:
+def call_groq(
+    model_id: str,
+    prompt: str,
+    system: str = "",
+    temperature: float = 0.1,
+    max_tokens: int = 2048,
+) -> dict:
     """
-    Throttled Groq call. Enforces minimum 2.5s between calls.
-    Returns { output, latency_ms }.
+    Drop-in replacement for all existing Groq calls.
+    Converts (model_id, prompt, system) → OpenAI-style messages list,
+    routes through the round-robin pool, and returns { output, latency_ms }.
     Raises RuntimeError on API failure — caller must handle.
     """
-    if not _client:
-        raise RuntimeError("GROQ_API_KEY not configured. Please set environment variable.")
-    
-    global _last_call_time
-
-    elapsed = time.time() - _last_call_time
-    if elapsed < MIN_GAP_SECONDS:
-        time.sleep(MIN_GAP_SECONDS - elapsed)
-
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
 
     start = time.time()
-    _last_call_time = time.time()
-
     try:
-        response = _client.chat.completions.create(
+        content = groq_pool.call(
             model=model_id,
             messages=messages,
             temperature=temperature,
-            max_tokens=1024,
+            max_tokens=max_tokens,
         )
-        _last_call_time = time.time()
         return {
-            "output": response.choices[0].message.content,
+            "output": content,
             "latency_ms": int((time.time() - start) * 1000),
         }
     except Exception as e:
-        _last_call_time = time.time()
         raise RuntimeError(f"Groq call failed [{model_id}]: {str(e)}")

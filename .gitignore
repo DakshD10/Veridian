@@ -24,9 +24,10 @@ out
 web/.env
 eval_engine/.env
 audit.txt
-CONTEXT.md
-CONTEXT(Truth).md       
+AI_RULES.md
+CONTEXT.md       
 REMEDIATION.md
 
 
 web/src/services/report.service.ts.old
+AI_RULES.md
