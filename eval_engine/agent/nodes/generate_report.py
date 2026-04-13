@@ -1,12 +1,12 @@
 from agent.state import WatcherState
-from models.groq_client import call_groq
+from provider_pool import groq_pool, JUDGE_MODEL
 from datetime import datetime, timezone
 
 def invoke(state: WatcherState) -> WatcherState:
     """
-    Node 6: Generate a natural language report using Groq LLM.
-    Uses llama-3.3-70b-versatile for report generation.
-    Produces 2-3 sentence summary with actionable recommendation.
+    Node 6: Generate a structured markdown regression report using JUDGE_MODEL.
+    Produces five-section markdown: Executive Summary, Regression Analysis,
+    Metric Breakdown, Root Cause Assessment, Recommended Actions.
     """
     scored = state.get("scored_results", [])
     overall = state["overall_score"]
@@ -28,32 +28,32 @@ def invoke(state: WatcherState) -> WatcherState:
             for m, v in all_scores.items()
         )
 
-    prompt = f"""You are an AI quality assurance engineer writing a technical regression report.
+    report_prompt = f"""You are a senior AI quality engineer writing a regression analysis report.
 
-Model evaluated: {model_id}
-Previous score: {previous:.2f}
-New score: {overall:.2f}
-Quality threshold: {threshold:.2f}
-Decision: {decision}
+Deployment: {state['deployment_id']}
+Model tested: {model_id}
+Baseline score: {previous:.2f}
+Current score: {overall:.2f}
+Regression detected: {state['regression_found']}
+Root cause: {state.get('root_cause', 'Not determined')}
 Failed test cases: {len(failed_cases)} of {len(scored)}
 Average metric scores: {metric_summary}
 
-Write a 2-3 sentence technical report summary that:
-1. States what happened to the quality score
-2. Identifies the main quality issue (which metrics failed most)
-3. Gives a clear actionable recommendation
+Write a structured report with these exact sections:
+## Executive Summary
+## Regression Analysis
+## Metric Breakdown
+## Root Cause Assessment
+## Recommended Actions
 
-Be specific and technical. Do not use bullet points. Write in plain sentences."""
+Be specific. Use the scores provided. Keep each section under 100 words.
+Do not add any preamble or closing remarks outside these sections."""
 
     try:
-        result = call_groq(
-            model_id="llama-3.3-70b-versatile",
-            prompt=prompt,
-            system="You are a technical AI quality assurance engineer. Write concise, actionable reports.",
-            temperature=0.3,
-        )
-        report = result["output"].strip()
+        messages = [{"role": "user", "content": report_prompt}]
+        report = groq_pool.call(JUDGE_MODEL, messages, temperature=0.3, max_tokens=2048).strip()
     except Exception as e:
+        print(f"[GenerateReport] Failed to generate report: {e}")
         report = (
             f"Quality score changed from {previous:.2f} to {overall:.2f} "
             f"({'below' if overall < threshold else 'above'} threshold {threshold:.2f}). "

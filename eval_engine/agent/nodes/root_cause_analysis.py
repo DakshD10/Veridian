@@ -1,9 +1,20 @@
 import json
 from datetime import datetime, timezone
 from agent.state import WatcherState
-from metrics.deepeval_runner import _throttled_groq_call
+from models.groq_client import call_groq
 
 JUDGE_MODEL = "llama-3.3-70b-versatile"
+
+
+def _throttled_groq_call(prompt: str) -> str:
+    """Route root-cause analysis prompts through the Groq pool (llama-3.3-70b)."""
+    result = call_groq(
+        model_id=JUDGE_MODEL,
+        prompt=prompt,
+        system="",
+        temperature=0.0,
+    )
+    return result["output"]
 
 
 def invoke(state: WatcherState) -> WatcherState:

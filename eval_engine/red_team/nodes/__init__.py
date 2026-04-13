@@ -4,6 +4,7 @@ from . import (
     generate_attacks,
     generate_red_team_report,
     load_targets,
+    notify,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "execute_attacks",
     "analyze_vulnerabilities",
     "generate_red_team_report",
+    "notify",
 ]

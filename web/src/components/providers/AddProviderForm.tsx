@@ -47,6 +47,7 @@ export function AddProviderForm({ onSuccess, onCancel }: AddProviderFormProps) {
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const baseUrl = watch("baseUrl");
   const modelId = watch("modelId");
   const apiKey = watch("apiKey");

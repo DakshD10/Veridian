@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { VeridianLogo } from "@/components/branding/VeridianLogo";
 import {
   LayoutDashboard,
   FlaskConical,
@@ -27,6 +28,11 @@ export function Sidebar() {
 
   return (
     <div className="flex flex-col w-52 h-full bg-linear-to-b from-[#09090B] to-[#0D0D10] border-r border-[#1F1F23]">
+      <div className="px-3 pt-4 pb-3 border-b border-[#1F1F23]">
+        <Link href="/dashboard" className="inline-flex">
+          <VeridianLogo size={32} animated={false} showWordmark wordmarkClassName="text-sm" />
+        </Link>
+      </div>
 
       {/* Nav Items */}
       <div className="flex-1 py-4 px-2 flex flex-col gap-1 relative">
@@ -77,7 +83,7 @@ export function Sidebar() {
           <Settings size={14} className="text-violet-500" />
           Settings
         </Link>
-        <span className="text-[11px] font-sans text-[#3F3F46]">LunaticBytes · TechnoTarang 2026</span>
+        <span className="text-[11px] font-sans text-[#3F3F46]">Cipher · TechnoTarang 2026</span>
         <span className="text-[11px] font-mono text-[#3F3F46]">v0.1.0</span>
       </div>
     </div>

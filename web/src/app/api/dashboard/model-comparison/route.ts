@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
 const ModelComparisonQuerySchema = z.object({
-  suiteId: z.string().min(1, "suiteId is required"),
+  suiteId: z.string().min(1, "suiteId is required").optional(),
 });
 
 function getErrorMessage(error: unknown): string {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const groupedRuns = await prisma.evalRun.groupBy({
       by: ["modelId"],
       where: {
-        suiteId: query.suiteId,
+        ...(query.suiteId ? { suiteId: query.suiteId } : {}),
         status: "COMPLETED",
         overallScore: { not: null },
       },
