@@ -13,22 +13,41 @@ import time
 import re
 from itertools import combinations
 from groq import Groq
+from dotenv import load_dotenv
 
-_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+load_dotenv()
+
+_client = None
 JUDGE_MODEL = "openai/gpt-oss-120b"
 
 MIN_GAP_SECONDS = 2.5
 _last_call_time = 0.0
 
 
+def _get_client() -> Groq:
+    global _client
+    if _client:
+        return _client
+
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "GROQ_API_KEY not configured. Please set environment variable."
+        )
+
+    _client = Groq(api_key=api_key)
+    return _client
+
+
 def _throttled_groq_call(prompt: str) -> str:
     global _last_call_time
+    client = _get_client()
     elapsed = time.time() - _last_call_time
     if elapsed < MIN_GAP_SECONDS:
         time.sleep(MIN_GAP_SECONDS - elapsed)
     _last_call_time = time.time()
     try:
-        response = _client.chat.completions.create(
+        response = client.chat.completions.create(
             model=JUDGE_MODEL,
             messages=[
                 {
