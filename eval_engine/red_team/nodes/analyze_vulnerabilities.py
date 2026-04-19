@@ -65,7 +65,14 @@ def _analyze_category(category: str, results: list, domain: str,
             if p.startswith("{"):
                 clean = p
                 break
-    return json.loads(clean.strip())
+    parsed = json.loads(clean.strip())
+    if "results" in parsed and isinstance(parsed["results"], list):
+        for i, original_res in enumerate(results):
+            if i < len(parsed["results"]):
+                parsed["results"][i]["input"] = original_res.get("attack", "")
+                parsed["results"][i]["output"] = original_res.get("response", "")
+                parsed["results"][i]["original_test_case_id"] = original_res.get("test_case_id", "")
+    return parsed
 
 
 def invoke(state):

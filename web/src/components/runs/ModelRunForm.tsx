@@ -10,24 +10,20 @@ interface ModelRunFormProps {
   onSelectModel: (id: string) => void;
 }
 
-type ModelFamily = "all" | "llama" | "gemini" | "mistral" | "qwen" | "kimi-k2";
+type ModelFamily = "all" | "llama" | "gpt-oss" | "qwen";
 
 const FAMILY_FILTERS: Array<{ id: ModelFamily; label: string }> = [
   { id: "all", label: "All" },
-  { id: "llama", label: "LLMA" },
-  { id: "gemini", label: "Gemini" },
-  { id: "mistral", label: "Mistral" },
+  { id: "llama", label: "Llama" },
+  { id: "gpt-oss", label: "GPT OSS" },
   { id: "qwen", label: "Qwen" },
-  { id: "kimi-k2", label: "Kimi K2" },
 ];
 
 function detectModelFamily(model: ModelOption): Exclude<ModelFamily, "all"> | null {
   const haystack = `${model.label} ${model.id}`.toLowerCase();
   if (haystack.includes("llama")) return "llama";
-  if (haystack.includes("gemini")) return "gemini";
-  if (haystack.includes("mistral") || haystack.includes("mixtral")) return "mistral";
+  if (haystack.includes("gpt-oss")) return "gpt-oss";
   if (haystack.includes("qwen")) return "qwen";
-  if (haystack.includes("kimi")) return "kimi-k2";
   return null;
 }
 
@@ -55,7 +51,6 @@ function speedBadgeLabel(speed: string): string {
 
 function formatProvider(provider: ModelOption["provider"]): string {
   if (provider === "groq") return "Groq";
-  if (provider === "gemini") return "Gemini";
   return "Custom";
 }
 
@@ -173,7 +168,7 @@ export function ModelRunForm({ selectedModelId, onSelectModel }: ModelRunFormPro
         <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-4 py-3 flex items-center gap-2">
           <Lock className="w-4 h-4 text-violet-400" />
           <span className="text-sm text-[#A1A1AA]">
-            Judge: <span className="font-mono text-violet-300">GPT OSS 120B</span>
+            Judge: <span className="font-mono text-violet-300">Llama 3.3 70B</span>
           </span>
         </div>
       </div>

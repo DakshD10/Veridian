@@ -43,6 +43,7 @@ def invoke(state: WatcherState) -> WatcherState:
 
     payload = {
         "agent_run_id":     state["agent_run_id"],
+        "new_model_id":     state["new_model_id"],
         "new_score":        state["overall_score"],
         "previous_score":   state["previous_score"],
         "regression_found": state["regression_found"],
@@ -50,6 +51,7 @@ def invoke(state: WatcherState) -> WatcherState:
         "report_summary":   state["report_summary"],
         "root_cause":       state.get("root_cause", ""),
         "agent_trace":      state["agent_trace"],  # includes notify node
+        "test_results":     state.get("test_results", []),
         "scored_results":   state["scored_results"],
     }
 

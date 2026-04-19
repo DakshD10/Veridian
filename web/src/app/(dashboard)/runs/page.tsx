@@ -7,11 +7,50 @@ import type { EvalRun } from "@/types";
 import { motion } from "framer-motion";
 import { useState, useRef } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type RunListItem = EvalRun & {
   overallScore: number | null;
   suite?: { name: string } | null;
 };
+
+function RunsPageSkeleton() {
+  return (
+    <PageLayout
+      title="Run History"
+      subtitle="Loading runs..."
+      stats={[
+        { label: "TOTAL CASES", value: "--" },
+        { label: "PASS RATE", value: "--" },
+        { label: "AVG SCORE", value: "--" },
+        { label: "SUCCESS RATE", value: "--" },
+      ]}
+    >
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-24 bg-[#121215]/50 rounded-md" />
+          <Skeleton className="h-8 w-24 bg-[#121215]/50 rounded-md" />
+          <Skeleton className="h-8 w-24 bg-[#121215]/50 rounded-md" />
+          <Skeleton className="h-8 w-24 bg-[#121215]/50 rounded-md" />
+        </div>
+        <Skeleton className="h-4 w-16 bg-[#121215]/50 rounded" />
+      </div>
+
+      <div className="w-full bg-[#111113] border border-[#1F1F23] rounded-lg overflow-hidden">
+        <div className="border-b border-[#1F1F23] px-6 py-4">
+          <Skeleton className="h-3 w-60 bg-[#121215]/50 rounded" />
+        </div>
+        <div className="p-4 space-y-3">
+          <Skeleton className="h-14 w-full bg-[#121215]/50 rounded-md" />
+          <Skeleton className="h-14 w-full bg-[#121215]/50 rounded-md" />
+          <Skeleton className="h-14 w-full bg-[#121215]/50 rounded-md" />
+          <Skeleton className="h-14 w-full bg-[#121215]/50 rounded-md" />
+          <Skeleton className="h-14 w-full bg-[#121215]/50 rounded-md" />
+        </div>
+      </div>
+    </PageLayout>
+  );
+}
 
 export default function RunsPage() {
   const { data, isLoading, isError } = useRuns();
@@ -110,7 +149,7 @@ export default function RunsPage() {
 
   const chips = ["All Suites", "All Models", "All Status", "Last 30 days"];
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading runs...</div>;
+  if (isLoading) return <RunsPageSkeleton />;
   if (isError) return <div className="p-8 text-center text-destructive">Failed to load runs.</div>;
   if (runs.length === 0) return <div className="p-8 text-center text-muted-foreground">No runs yet.</div>;
 

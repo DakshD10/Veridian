@@ -1,20 +1,20 @@
 /**
- * model.service.ts — Veridian Multi-Provider Model Runner (Web)
+ * model.service.ts — Veridian Model Runner (Web)
  *
- * Groq pool: reads GROQ_API_KEY_1, GROQ_API_KEY_2, GROQ_Fallback_Key
- * Gemini pool: delegates to lib/gemini.ts (callGemini)
+ * Groq pool: reads GROQ_API_KEY_1, GROQ_API_KEY_2, GROQ_JUDGE_MODEL, GROQ_Fallback_Key
+ * Eval runs are restricted to the supported Groq model allowlist below.
  *
  * To add GROQ_API_KEY_3: add to .env.local and append to GROQ_KEY_ENV_VARS below.
  */
 
 import Groq from "groq-sdk";
 import { prisma } from "@/lib/prisma";
-import { callGemini } from "@/lib/gemini";
 
 // ── GROQ POOL CONFIGURATION — edit this list to add/remove keys ──
 const GROQ_KEY_ENV_VARS = [
   process.env.GROQ_API_KEY_1,
   process.env.GROQ_API_KEY_2,
+  process.env.GROQ_JUDGE_MODEL,
   // process.env.GROQ_API_KEY_3,   // uncomment when you have a 3rd key
   // process.env.GROQ_API_KEY_4,
 ];
@@ -30,6 +30,17 @@ if (groqKeys.length === 0) {
 const groqClients = groqKeys.map((k) => new Groq({ apiKey: k }));
 const MIN_GAP_MS = 2500;
 const groqLastCallTime: number[] = groqKeys.map(() => 0);
+const SUPPORTED_GROQ_EVAL_MODELS = new Set([
+  "llama-3.1-8b-instant",
+  "llama-3.3-70b-versatile",
+  "meta-llama/llama-4-scout-17b-16e-instruct",
+  "meta-llama/llama-prompt-guard-2-22m",
+  "meta-llama/llama-prompt-guard-2-86m",
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-safeguard-20b",
+  "qwen/qwen3-32b",
+]);
 
 function selectGroqKeyIndex(): number {
   const now = Date.now();
@@ -40,12 +51,6 @@ function selectGroqKeyIndex(): number {
     if (elapsed > maxElapsed) { maxElapsed = elapsed; best = i; }
   }
   return best;
-}
-
-const GEMINI_MODEL_PREFIXES = ["gemini-"];
-
-function isGeminiModel(modelId: string): boolean {
-  return GEMINI_MODEL_PREFIXES.some((p) => modelId.startsWith(p));
 }
 
 export async function callModel(
@@ -65,10 +70,10 @@ export async function callModel(
 
   const start = Date.now();
 
-  if (isGeminiModel(modelId)) {
-    const prompt = `${systemPrompt}\n\n${input}`;
-    const output = await callGemini(prompt, modelId, 0.1);
-    return { output, latencyMs: Date.now() - start };
+  if (!SUPPORTED_GROQ_EVAL_MODELS.has(modelId)) {
+    throw new Error(
+      `Unsupported model for eval run: ${modelId}. Allowed: ${Array.from(SUPPORTED_GROQ_EVAL_MODELS).join(", ")}`
+    );
   }
 
   // Groq path — LRU key selection + per-key throttle
@@ -169,34 +174,15 @@ async function callCustomProvider(
 
 export async function getAvailableModels() {
   const builtInModels = [
-    // ── LLAMA 4 (Latest) ──────────────────────────────────
-    { id: "meta-llama/llama-4-scout-17b-16e-instruct",    label: "Llama 4 Scout 17B",    speed: "very fast", provider: "groq"   },
-    { id: "meta-llama/llama-4-maverick-17b-128e-instruct", label: "Llama 4 Maverick 17B", speed: "fast",      provider: "groq"   },
-
-    // ── GPT OSS (Groq) ────────────────────────────────────
-    { id: "openai/gpt-oss-120b",           label: "GPT OSS 120B",         speed: "fast",      provider: "groq"   },
-
-    // ── LLAMA 3.x ─────────────────────────────────────────
-    { id: "llama-3.3-70b-versatile",       label: "Llama 3.3 70B Versatile", speed: "fast",   provider: "groq"   },
-    { id: "llama-3.1-8b-instant",          label: "Llama 3.1 8B Instant", speed: "very fast", provider: "groq"   },
-    { id: "llama-3.2-3b-preview",          label: "Llama 3.2 3B",         speed: "very fast", provider: "groq"   },
-    { id: "llama-3.2-11b-vision-preview",  label: "Llama 3.2 11B Vision", speed: "fast",      provider: "groq"   },
-    { id: "llama-3.2-90b-vision-preview",  label: "Llama 3.2 90B Vision", speed: "fast",      provider: "groq"   },
-
-    // ── QWEN ──────────────────────────────────────────────
-    { id: "qwen/qwen3-32b",                label: "Qwen 3 32B",           speed: "fast",      provider: "groq"   },
-
-    // ── KIMI K2 ───────────────────────────────────────────
-    { id: "moonshotai/kimi-k2-instruct",   label: "Kimi K2",              speed: "fast",      provider: "groq"   },
-
-    // ── MIXTRAL + GEMMA ───────────────────────────────────
-    { id: "mixtral-8x7b-32768",            label: "Mixtral 8x7B",         speed: "fast",      provider: "groq"   },
-    { id: "gemma2-9b-it",                  label: "Gemma 2 9B",           speed: "very fast", provider: "groq"   },
-
-    // ── GEMINI ────────────────────────────────────────────
-    { id: "gemini-2.0-flash",              label: "Gemini 2.0 Flash",     speed: "very fast", provider: "gemini" },
-    { id: "gemini-1.5-pro",                label: "Gemini 1.5 Pro",       speed: "fast",      provider: "gemini" },
-    { id: "gemini-1.5-flash",              label: "Gemini 1.5 Flash",     speed: "very fast", provider: "gemini" },
+    { id: "llama-3.1-8b-instant",                    label: "Llama 3.1 8B",              speed: "very fast", provider: "groq" },
+    { id: "llama-3.3-70b-versatile",                 label: "Llama 3.3 70B",             speed: "fast",      provider: "groq" },
+    { id: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 17B 16E",  speed: "fast",      provider: "groq" },
+    { id: "meta-llama/llama-prompt-guard-2-22m",     label: "Llama Prompt Guard 2 22M",  speed: "very fast", provider: "groq" },
+    { id: "meta-llama/llama-prompt-guard-2-86m",     label: "Llama Prompt Guard 2 86M",  speed: "very fast", provider: "groq" },
+    { id: "openai/gpt-oss-120b",                     label: "GPT OSS 120B",              speed: "fast",      provider: "groq" },
+    { id: "openai/gpt-oss-20b",                      label: "GPT OSS 20B",               speed: "very fast", provider: "groq" },
+    { id: "openai/gpt-oss-safeguard-20b",            label: "Safety GPT OSS 20B",        speed: "very fast", provider: "groq" },
+    { id: "qwen/qwen3-32b",                          label: "Qwen3 32B",                  speed: "fast",      provider: "groq" },
   ];
 
   // Fetch active custom providers from DB

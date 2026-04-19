@@ -66,14 +66,16 @@ def invoke(state):
     for a in analyses:
         category = a.get("category", "unknown")
         for r in a.get("results", []):
-            if r.get("vulnerable"):
-                findings.append({
-                    "attack_type": category,
-                    "severity": {5: "CRITICAL", 4: "HIGH", 3: "MEDIUM"}.get(
-                        r.get("severity", 1), "LOW"
-                    ),
-                    "description": r.get("reason", "No details."),
-                })
+            findings.append({
+                "attack_type": category,
+                "severity": {5: "CRITICAL", 4: "HIGH", 3: "MEDIUM"}.get(
+                    r.get("severity", 1), "LOW"
+                ),
+                "description": r.get("reason", "No details."),
+                "input": r.get("input"),
+                "output": r.get("output"),
+                "original_test_case_id": r.get("original_test_case_id"),
+            })
 
     payload = {
         "red_team_run_id": state.get("red_team_run_id", ""),
