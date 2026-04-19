@@ -1,31 +1,56 @@
+/**
+ * model.service.ts — Veridian Model Runner (Web)
+ *
+ * Groq pool: reads GROQ_API_KEY_1, GROQ_API_KEY_2, GROQ_JUDGE_MODEL, GROQ_Fallback_Key
+ * Eval runs are restricted to the supported Groq model allowlist below.
+ *
+ * To add GROQ_API_KEY_3: add to .env.local and append to GROQ_KEY_ENV_VARS below.
+ */
+
 import Groq from "groq-sdk";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 
-const groqApiKey = process.env.GROQ_API_KEY;
-const geminiApiKey = process.env.GEMINI_API_KEY;
+// ── GROQ POOL CONFIGURATION — edit this list to add/remove keys ──
+const GROQ_KEY_ENV_VARS = [
+  process.env.GROQ_API_KEY_1,
+  process.env.GROQ_API_KEY_2,
+  process.env.GROQ_JUDGE_MODEL,
+  // process.env.GROQ_API_KEY_3,   // uncomment when you have a 3rd key
+  // process.env.GROQ_API_KEY_4,
+];
 
-if (process.env.NODE_ENV !== "production") {
-  if (!groqApiKey) {
-    console.warn("GROQ_API_KEY is missing. Groq models will not be available.");
-  }
-  if (!geminiApiKey) {
-    console.warn("GEMINI_API_KEY is missing. Gemini models will not be available.");
-  }
+const groqKeys = GROQ_KEY_ENV_VARS.filter(Boolean) as string[];
+
+if (groqKeys.length === 0) {
+  const fallback = process.env.GROQ_Fallback_Key;
+  if (fallback) groqKeys.push(fallback);
+  else throw new Error("No Groq API keys configured. Set at least GROQ_API_KEY_1 or GROQ_Fallback_Key in web/.env.local");
 }
 
-const groq = groqApiKey ? new Groq({ apiKey: groqApiKey }) : null;
-const gemini = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
-
+const groqClients = groqKeys.map((k) => new Groq({ apiKey: k }));
 const MIN_GAP_MS = 2500;
-let _lastCallTime = 0;
+const groqLastCallTime: number[] = groqKeys.map(() => 0);
+const SUPPORTED_GROQ_EVAL_MODELS = new Set([
+  "llama-3.1-8b-instant",
+  "llama-3.3-70b-versatile",
+  "meta-llama/llama-4-scout-17b-16e-instruct",
+  "meta-llama/llama-prompt-guard-2-22m",
+  "meta-llama/llama-prompt-guard-2-86m",
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-safeguard-20b",
+  "qwen/qwen3-32b",
+]);
 
-async function throttle() {
-  const elapsed = Date.now() - _lastCallTime;
-  if (elapsed < MIN_GAP_MS) {
-    await new Promise(res => setTimeout(res, MIN_GAP_MS - elapsed));
+function selectGroqKeyIndex(): number {
+  const now = Date.now();
+  let best = 0;
+  let maxElapsed = now - groqLastCallTime[0];
+  for (let i = 1; i < groqLastCallTime.length; i++) {
+    const elapsed = now - groqLastCallTime[i];
+    if (elapsed > maxElapsed) { maxElapsed = elapsed; best = i; }
   }
-  // _lastCallTime is NOT set here — it is set after each call completes
+  return best;
 }
 
 export async function callModel(
@@ -33,15 +58,11 @@ export async function callModel(
   input: string,
   context?: string
 ): Promise<{ output: string; latencyMs: number }> {
-  await throttle();
-
+  // Custom provider path — bypasses pool entirely
   if (modelId.startsWith("custom:")) {
     const providerId = modelId.replace("custom:", "");
     return callCustomProvider(providerId, input, context);
   }
-
-  const model = (await getAvailableModels()).find(m => m.id === modelId);
-  const provider = model?.provider ?? "groq";
 
   const systemPrompt = context
     ? `You are a helpful AI assistant. Use this context to answer: ${context}`
@@ -49,33 +70,21 @@ export async function callModel(
 
   const start = Date.now();
 
-  if (provider === "gemini") {
-    if (!gemini) {
-      throw new Error(
-        "Gemini API key is not configured. Please set GEMINI_API_KEY."
-      );
-    }
-
-    const geminiModel = gemini.getGenerativeModel({ model: modelId });
-    const result = await geminiModel.generateContent(
-      `${systemPrompt}\n\nUser: ${input}`
-    );
-
-    _lastCallTime = Date.now(); // set AFTER call completes
-    return {
-      output: result.response.text(),
-      latencyMs: Date.now() - start,
-    };
-  }
-
-  // Default: Groq
-  if (!groq) {
+  if (!SUPPORTED_GROQ_EVAL_MODELS.has(modelId)) {
     throw new Error(
-      "Groq API key is not configured. Please set GROQ_API_KEY."
+      `Unsupported model for eval run: ${modelId}. Allowed: ${Array.from(SUPPORTED_GROQ_EVAL_MODELS).join(", ")}`
     );
   }
 
-  const response = await groq.chat.completions.create({
+  // Groq path — LRU key selection + per-key throttle
+  const idx = selectGroqKeyIndex();
+  const elapsed = Date.now() - groqLastCallTime[idx];
+  if (elapsed < MIN_GAP_MS) {
+    await new Promise((r) => setTimeout(r, MIN_GAP_MS - elapsed));
+  }
+  groqLastCallTime[idx] = Date.now();
+
+  const response = await groqClients[idx].chat.completions.create({
     model: modelId,
     messages: [
       { role: "system", content: systemPrompt },
@@ -85,7 +94,7 @@ export async function callModel(
     max_tokens: 1024,
   });
 
-  _lastCallTime = Date.now(); // set AFTER call completes
+  groqLastCallTime[idx] = Date.now();
   return {
     output: response.choices[0].message.content ?? "",
     latencyMs: Date.now() - start,
@@ -123,9 +132,9 @@ async function callCustomProvider(
     ? `You are a helpful AI assistant. Use this context to answer accurately: ${context}`
     : "You are a helpful AI assistant. Answer accurately and concisely.";
 
-  // Record call time for throttle (already waited in callModel)
+  // Groq throttle timestamp — use key 0 slot as the custom-provider sentinel
   const start = Date.now();
-  _lastCallTime = Date.now();
+  groqLastCallTime[0] = Date.now();
 
   // Make OpenAI-compatible request
   const response = await fetch(`${provider.baseUrl}/chat/completions`, {
@@ -142,7 +151,7 @@ async function callCustomProvider(
     }),
   });
 
-  _lastCallTime = Date.now();
+  groqLastCallTime[0] = Date.now();
 
   if (!response.ok) {
     throw new Error(
@@ -165,30 +174,15 @@ async function callCustomProvider(
 
 export async function getAvailableModels() {
   const builtInModels = [
-    // ── LLAMA 4 (Latest) ──────────────────────────────────
-    { id: "meta-llama/llama-4-scout-17b-16e-instruct",    label: "Llama 4 Scout 17B",    speed: "very fast", provider: "groq"   },
-    { id: "meta-llama/llama-4-maverick-17b-128e-instruct", label: "Llama 4 Maverick 17B", speed: "fast",      provider: "groq"   },
-
-    // ── LLAMA 3.x ─────────────────────────────────────────
-    { id: "llama-3.1-8b-instant",          label: "Llama 3.1 8B Instant", speed: "very fast", provider: "groq"   },
-    { id: "llama-3.2-3b-preview",          label: "Llama 3.2 3B",         speed: "very fast", provider: "groq"   },
-    { id: "llama-3.2-11b-vision-preview",  label: "Llama 3.2 11B Vision", speed: "fast",      provider: "groq"   },
-    { id: "llama-3.2-90b-vision-preview",  label: "Llama 3.2 90B Vision", speed: "fast",      provider: "groq"   },
-
-    // ── QWEN ──────────────────────────────────────────────
-    { id: "qwen/qwen3-32b",                label: "Qwen 3 32B",           speed: "fast",      provider: "groq"   },
-
-    // ── KIMI K2 ───────────────────────────────────────────
-    { id: "moonshotai/kimi-k2-instruct",   label: "Kimi K2",              speed: "fast",      provider: "groq"   },
-
-    // ── MIXTRAL + GEMMA ───────────────────────────────────
-    { id: "mixtral-8x7b-32768",            label: "Mixtral 8x7B",         speed: "fast",      provider: "groq"   },
-    { id: "gemma2-9b-it",                  label: "Gemma 2 9B",           speed: "very fast", provider: "groq"   },
-
-    // ── GEMINI ────────────────────────────────────────────
-    { id: "gemini-2.0-flash",              label: "Gemini 2.0 Flash",     speed: "very fast", provider: "gemini" },
-    { id: "gemini-1.5-pro",                label: "Gemini 1.5 Pro",       speed: "fast",      provider: "gemini" },
-    { id: "gemini-1.5-flash",              label: "Gemini 1.5 Flash",     speed: "very fast", provider: "gemini" },
+    { id: "llama-3.1-8b-instant",                    label: "Llama 3.1 8B",              speed: "very fast", provider: "groq" },
+    { id: "llama-3.3-70b-versatile",                 label: "Llama 3.3 70B",             speed: "fast",      provider: "groq" },
+    { id: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 17B 16E",  speed: "fast",      provider: "groq" },
+    { id: "meta-llama/llama-prompt-guard-2-22m",     label: "Llama Prompt Guard 2 22M",  speed: "very fast", provider: "groq" },
+    { id: "meta-llama/llama-prompt-guard-2-86m",     label: "Llama Prompt Guard 2 86M",  speed: "very fast", provider: "groq" },
+    { id: "openai/gpt-oss-120b",                     label: "GPT OSS 120B",              speed: "fast",      provider: "groq" },
+    { id: "openai/gpt-oss-20b",                      label: "GPT OSS 20B",               speed: "very fast", provider: "groq" },
+    { id: "openai/gpt-oss-safeguard-20b",            label: "Safety GPT OSS 20B",        speed: "very fast", provider: "groq" },
+    { id: "qwen/qwen3-32b",                          label: "Qwen3 32B",                  speed: "fast",      provider: "groq" },
   ];
 
   // Fetch active custom providers from DB

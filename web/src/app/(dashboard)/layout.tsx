@@ -5,7 +5,6 @@ import { CursorGlowTrail } from "@/components/global/CursorGlowTrail";
 import { NoiseOverlay } from "@/components/global/NoiseOverlay";
 import { PageTransition } from "@/components/global/PageTransition";
 import { AmbientBackground } from "@/components/vfx/AmbientBackground";
-import { ScrollProgress } from "@/components/shared/ScrollProgress";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useRef } from "react";
@@ -25,7 +24,6 @@ export default function DashboardLayout({
       <NoiseOverlay />
       <Sidebar />
       <main className="flex-1 w-full relative">
-        <ScrollProgress />
         <div 
           ref={scrollContainerRef}
           id="scroll-container"

@@ -7,7 +7,7 @@ from red_team.state import RedTeamState
 
 logger = logging.getLogger(__name__)
 
-MAX_TEST_CASES = 10
+MAX_TEST_CASES = 6   # was 10. Reduces execute_attacks from 70 to 42 calls.
 
 
 def _deterministic_sample(
@@ -30,7 +30,7 @@ def _deterministic_sample(
 def invoke(state: RedTeamState) -> RedTeamState:
     """Validate test cases are present, apply sampling cap, and log to trace."""
     try:
-        test_cases = state.get("test_cases", [])
+        test_cases = state.get("eval_suite", {}).get("test_cases", [])
         original_count = len(test_cases)
 
         # Apply strategic sampling cap

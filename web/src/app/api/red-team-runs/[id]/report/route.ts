@@ -17,6 +17,8 @@ export async function GET(
       },
     });
   } catch (error) {
+    console.error("Red team report generation error:", error);
+
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json({ error: "Red team run not found" }, { status: 404 });
     }

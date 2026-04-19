@@ -34,22 +34,26 @@ async def run_red_team(request: RedTeamRunRequest):
     initial_state: dict = {
         "red_team_run_id": request.red_team_run_id,
         "suite_id": request.suite_id,
-        "model_id": request.model_id,
+        "target_model_id": request.model_id,
         "callback_url": request.callback_url,
-        "test_cases": [
-            {
-                "id": tc.id,
-                "input": tc.input,
-                "expected_output": tc.expected_output,
-                "context": tc.context,
-            }
-            for tc in request.test_cases
-        ],
-        # Initialize mutable fields
-        "attack_inputs": [],
-        "attack_results": [],
-        "vulnerabilities": [],
-        "critical_count": 0,
+        "eval_suite": {
+            "id": request.suite_id,
+            "domain": "general",
+            "test_cases": [
+                {
+                    "id": tc.id,
+                    "input": tc.input,
+                    "expected_output": tc.expected_output,
+                    "context": tc.context,
+                }
+                for tc in request.test_cases
+            ],
+        },
+        "test_cases": [],
+        "generated_attacks": {},
+        "attack_results": {},
+        "vulnerability_analysis": [],
+        "overall_risk": "",
         "report_summary": "",
         "agent_trace": [],
     }

@@ -3,6 +3,7 @@ import httpx
 import asyncio
 import logging
 import os
+from urllib.parse import urlparse
 from datetime import datetime, timezone
 from ..state import WatcherState
 
@@ -42,6 +43,7 @@ def invoke(state: WatcherState) -> WatcherState:
 
     payload = {
         "agent_run_id":     state["agent_run_id"],
+        "new_model_id":     state["new_model_id"],
         "new_score":        state["overall_score"],
         "previous_score":   state["previous_score"],
         "regression_found": state["regression_found"],
@@ -49,6 +51,7 @@ def invoke(state: WatcherState) -> WatcherState:
         "report_summary":   state["report_summary"],
         "root_cause":       state.get("root_cause", ""),
         "agent_trace":      state["agent_trace"],  # includes notify node
+        "test_results":     state.get("test_results", []),
         "scored_results":   state["scored_results"],
     }
 
@@ -67,10 +70,11 @@ def invoke(state: WatcherState) -> WatcherState:
                 }
 
                 async def _notify_slack():
-                    web_app_url = os.getenv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
+                    parsed = urlparse(callback_url)
+                    web_app_url = f"{parsed.scheme}://{parsed.netloc}"
                     async with httpx.AsyncClient(timeout=15.0) as client:
                         r = await client.post(
-                            f"{web_app_url.rstrip('/')}/api/slack/notify",
+                            f"{web_app_url}/api/slack/notify",
                             json=slack_payload,
                         )
                         return r.status_code < 300
@@ -87,10 +91,11 @@ def invoke(state: WatcherState) -> WatcherState:
                 }
 
                 async def _notify_telegram():
-                    web_app_url = os.getenv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
+                    parsed = urlparse(callback_url)
+                    web_app_url = f"{parsed.scheme}://{parsed.netloc}"
                     async with httpx.AsyncClient(timeout=15.0) as client:
                         r = await client.post(
-                            f"{web_app_url.rstrip('/')}/api/telegram/notify",
+                            f"{web_app_url}/api/telegram/notify",
                             json=telegram_payload,
                         )
                         return r.status_code < 300

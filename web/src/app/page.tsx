@@ -1,131 +1,201 @@
 "use client";
 
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { 
-  AlertTriangle, CheckCircle, Activity, Shield, FileText, 
-  BarChart3, Bot, X, Loader2, Zap, ArrowRight, Spline, Sparkles, Cpu, Layers, GitBranch, ArrowUpRight, Database, Terminal, Code, Users, Settings, Lock, Network, Key
-} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { AlertTriangle, CheckCircle, Activity, Shield, FileText, BarChart3, Bot, X, Loader2, ChevronDown, Zap, Eye, Target, Brain, Lock, Gauge } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { LineChart, Line, ReferenceLine, Dot, ResponsiveContainer, Area, AreaChart, Tooltip, XAxis, YAxis } from "recharts";
-import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import { Logo } from "@/components/ui/Logo";
+import { LineChart, Line, ReferenceLine, Dot, ResponsiveContainer } from "recharts";
+import { useState, useEffect } from "react";
 
-// Linear style grid background component
-// Premium Background with floating beams and refined grid
-function GridBackground() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-      {/* Dynamic Grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_-20%,#000_60%,transparent_110%)]"></div>
-      
-      {/* Animated Beams */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div 
-          animate={{ 
-            x: ["-100%", "200%"],
-            y: ["-20%", "20%"]
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[20%] left-0 w-[40%] h-[1px] bg-linear-to-r from-transparent via-violet-500/30 to-transparent rotate-[25deg] blur-sm"
-        />
-        <motion.div 
-          animate={{ 
-            x: ["200%", "-100%"],
-            y: ["20%", "-20%"]
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[60%] right-0 w-[50%] h-[1px] bg-linear-to-r from-transparent via-blue-500/20 to-transparent rotate-[-15deg] blur-sm"
-        />
-      </div>
+/* ──────────────────────────────────── TECH STACK LOGOS (SVG) ──────────────────────────────────── */
 
-      {/* Ambient Glows */}
-      <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[1000px] h-[800px] bg-violet-600/10 opacity-60 blur-[150px] rounded-full mix-blend-screen"></div>
-      <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-blue-600/10 opacity-40 blur-[150px] rounded-full mix-blend-screen"></div>
-    </div>
-  );
-}
+const NextjsLogo = () => (
+  <svg viewBox="0 0 180 180" fill="none" className="w-10 h-10">
+    <mask id="nMask" style={{maskType:'alpha'}} maskUnits="userSpaceOnUse" x="0" y="0" width="180" height="180">
+      <circle cx="90" cy="90" r="90" fill="black"/>
+    </mask>
+    <g mask="url(#nMask)">
+      <circle cx="90" cy="90" r="90" fill="black" stroke="white" strokeWidth="6"/>
+      <path d="M149.508 157.52L69.142 54H54v71.97h12.114V69.384l73.885 95.461A90.304 90.304 0 00149.508 157.52z" fill="url(#nGrad1)"/>
+      <path d="M115 54h12v72h-12z" fill="url(#nGrad2)"/>
+    </g>
+    <defs>
+      <linearGradient id="nGrad1" x1="109" y1="116.5" x2="144.5" y2="160.5" gradientUnits="userSpaceOnUse">
+        <stop stopColor="white"/><stop offset="1" stopColor="white" stopOpacity="0"/>
+      </linearGradient>
+      <linearGradient id="nGrad2" x1="121" y1="54" x2="120.799" y2="106.875" gradientUnits="userSpaceOnUse">
+        <stop stopColor="white"/><stop offset="1" stopColor="white" stopOpacity="0"/>
+      </linearGradient>
+    </defs>
+  </svg>
+);
 
-function SpotlightCard({ children, className = "" }: { children: React.ReactNode, className?: string }) {
-  const divRef = useRef<HTMLDivElement>(null);
-  const [isFocused, setIsFocused] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [opacity, setOpacity] = useState(0);
+const TypeScriptLogo = () => (
+  <svg viewBox="0 0 128 128" className="w-10 h-10">
+    <path fill="#3178c6" d="M2 63.91v62.5h125v-125H2zm100.73-5.01h-11.36v48.56H80.15V58.9H68.71V47.59h34.02z"/>
+    <path fill="#3178c6" d="M60.68 100.82a23.43 23.43 0 01-7.22-3.82l3.5-5.5a20.14 20.14 0 005.75 3.27 18.8 18.8 0 006.68 1.37c4.56 0 6.84-1.75 6.84-5.25a4.58 4.58 0 00-.82-2.81 6.48 6.48 0 00-2.81-1.93l-7.12-2.75a14.72 14.72 0 01-6.84-4.75 12.24 12.24 0 01-2.37-7.81 12.12 12.12 0 011.68-6.37 11.42 11.42 0 014.87-4.37 16.63 16.63 0 017.62-1.62 23.59 23.59 0 017.31 1.12 19.13 19.13 0 015.87 3.25l-3.25 5.62a15.88 15.88 0 00-4.87-2.75 15.14 15.14 0 00-5.25-1 7.23 7.23 0 00-4.43 1.18 3.88 3.88 0 00-1.62 3.31 4.37 4.37 0 001 2.93 8.58 8.58 0 003.31 2.18l6.75 2.62a14.17 14.17 0 016.25 4.37 11.1 11.1 0 012.12 7.06 12.63 12.63 0 01-1.68 6.56 11.34 11.34 0 01-5 4.43 17.5 17.5 0 01-7.93 1.62 26.29 26.29 0 01-8.62-1.37z"/>
+  </svg>
+);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!divRef.current || isFocused) return;
-    const div = divRef.current;
-    const rect = div.getBoundingClientRect();
-    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
+const TailwindLogo = () => (
+  <svg viewBox="0 0 256 154" className="w-12 h-10">
+    <path fill="#06B6D4" d="M128 0Q96 0 80 32q24-16 48-8c7.55 2.52 12.95 7.93 18.95 13.94C157.1 48.08 168.94 60 192 60q32 0 48-32-24 16-48 8c-7.55-2.52-12.95-7.93-18.95-13.94C162.9 11.92 151.06 0 128 0zM64 60Q32 60 16 92q24-16 48-8c7.55 2.52 12.95 7.93 18.95 13.94C93.1 108.08 104.94 120 128 120q32 0 48-32-24 16-48 8c-7.55-2.52-12.95-7.93-18.95-13.94C98.9 71.92 87.06 60 64 60z"/>
+  </svg>
+);
 
-  return (
-    <div
-      ref={divRef}
-      onMouseMove={handleMouseMove}
-      onFocus={() => { setIsFocused(true); setOpacity(1); }}
-      onBlur={() => { setIsFocused(false); setOpacity(0); }}
-      onMouseEnter={() => setOpacity(1)}
-      onMouseLeave={() => setOpacity(0)}
-      className={`relative overflow-hidden group transition-colors ${className}`}
-    >
-      <div
-        className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 z-0 mix-blend-screen"
-        style={{
-          opacity,
-          background: `radial-gradient(800px circle at ${position.x}px ${position.y}px, rgba(139,92,246,0.06), transparent 40%)`,
-        }}
-      />
-      <div className="relative z-10 h-full">{children}</div>
-    </div>
-  );
-}
+const PythonLogo = () => (
+  <svg viewBox="0 0 128 128" className="w-10 h-10">
+    <linearGradient id="pyA" x1="12.96" y1="12.78" x2="79.64" y2="79.28" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#387EB8"/><stop offset="1" stopColor="#366994"/></linearGradient>
+    <linearGradient id="pyB" x1="19.13" y1="20.43" x2="88.12" y2="89.15" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#FFE052"/><stop offset="1" stopColor="#FFC331"/></linearGradient>
+    <path fill="url(#pyA)" d="M63.39 1.81c-4.08.04-7.97.41-11.47 1.03-10.36 1.83-12.24 5.66-12.24 12.73v9.33h24.49v3.11H25.68c-7.11 0-13.34 4.28-15.29 12.42-2.25 9.33-2.35 15.15 0 24.89 1.74 7.24 5.91 12.42 13.02 12.42h8.43V67.65c0-8.07 6.98-15.18 15.29-15.18h24.47c6.8 0 12.24-5.6 12.24-12.42V15.57c0-6.62-5.58-11.58-12.24-12.73-4.21-.73-8.58-1.07-12.62-1.03zm-13.22 7.3a4.65 4.65 0 014.69 4.69 4.66 4.66 0 01-4.69 4.72 4.67 4.67 0 01-4.69-4.72 4.66 4.66 0 014.69-4.69z"/>
+    <path fill="url(#pyB)" d="M91.68 28.01v9.74c0 8.44-7.14 15.55-15.29 15.55H51.92c-6.71 0-12.24 5.74-12.24 12.45v23.34c0 6.63 5.76 10.53 12.24 12.45 7.76 2.3 15.2 2.71 24.47 0 6.15-1.8 12.24-5.41 12.24-12.45v-9.33H64.16v-3.11h36.71c7.11 0 9.76-4.96 12.24-12.42 2.56-7.67 2.45-15.05 0-24.89-1.76-7.09-5.12-12.42-12.24-12.42H91.68zm-14 56.15a4.67 4.67 0 014.69 4.72 4.66 4.66 0 01-4.69 4.69 4.65 4.65 0 01-4.69-4.69 4.66 4.66 0 014.69-4.72z"/>
+  </svg>
+);
+
+const FastAPILogo = () => (
+  <svg viewBox="0 0 154 154" className="w-10 h-10">
+    <circle cx="77" cy="77" r="77" fill="#009688"/>
+    <path d="M81.375 18.667l-38.75 70H77V144l38.75-70H81.375z" fill="white"/>
+  </svg>
+);
+
+const LangChainLogo = () => (
+  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a365d, #2d3748)' }}>
+    <span className="text-white font-bold text-lg">🦜</span>
+  </div>
+);
+
+const LangGraphLogo = () => (
+  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #2d3748, #4a5568)' }}>
+    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+      <circle cx="6" cy="6" r="2.5" fill="#10B981" stroke="#10B981" strokeWidth="0.5"/>
+      <circle cx="18" cy="6" r="2.5" fill="#06B6D4" stroke="#06B6D4" strokeWidth="0.5"/>
+      <circle cx="12" cy="18" r="2.5" fill="#8B5CF6" stroke="#8B5CF6" strokeWidth="0.5"/>
+      <line x1="7.5" y1="7.5" x2="11" y2="16" stroke="#a0aec0" strokeWidth="1"/>
+      <line x1="16.5" y1="7.5" x2="13" y2="16" stroke="#a0aec0" strokeWidth="1"/>
+      <line x1="8.5" y1="6" x2="15.5" y2="6" stroke="#a0aec0" strokeWidth="1"/>
+    </svg>
+  </div>
+);
+
+const GroqLogo = () => (
+  <div className="w-10 h-10 rounded-lg bg-black border border-[#27272A] flex items-center justify-center">
+    <span className="text-[#F55036] font-extrabold text-sm tracking-tighter">GROQ</span>
+  </div>
+);
+
+const ZodLogo = () => (
+  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#3E67B1' }}>
+    <span className="text-white font-extrabold text-base">Z</span>
+  </div>
+);
+
+const PrismaLogo = () => (
+  <svg viewBox="0 0 159 194" className="w-8 h-10">
+    <path fillRule="evenodd" clipRule="evenodd" d="M2.21 130.17l55.58 58.87c2.17 2.3 5.36 3.2 8.35 2.36l86.42-24.64c4.2-1.2 6.61-5.57 5.4-9.77a8.02 8.02 0 00-1.2-2.56L72.2 2.98C68.67-1.7 61.7-0.63 59.64 4.82L1.22 121.34a6.9 6.9 0 00.99 8.83z" fill="white"/>
+    <path d="M60.76 7.03L118.26 150l-52.03 14.83z" fill="#2D3748"/>
+  </svg>
+);
+
+const NeonLogo = () => (
+  <div className="w-10 h-10 rounded-lg bg-black border border-[#27272A] flex items-center justify-center">
+    <svg viewBox="0 0 24 24" className="w-6 h-6">
+      <path d="M4 4h4l4 16h-4L4 4zm8 0h4l4 16h-4l-4-16z" fill="#00E5FF" opacity="0.9"/>
+    </svg>
+  </div>
+);
+
+const PydanticLogo = () => (
+  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#E92063' }}>
+    <span className="text-white font-extrabold text-xs">PY</span>
+  </div>
+);
+
+const techStack = [
+  { Logo: NextjsLogo, name: "Next.js" },
+  { Logo: TypeScriptLogo, name: "TypeScript" },
+  { Logo: TailwindLogo, name: "Tailwind CSS" },
+  { Logo: PythonLogo, name: "Python" },
+  { Logo: FastAPILogo, name: "FastAPI" },
+  { Logo: LangChainLogo, name: "LangChain" },
+  { Logo: LangGraphLogo, name: "LangGraph" },
+  { Logo: GroqLogo, name: "Groq" },
+  { Logo: ZodLogo, name: "Zod" },
+  { Logo: PrismaLogo, name: "Prisma" },
+  { Logo: NeonLogo, name: "Neon" },
+  { Logo: PydanticLogo, name: "Pydantic" },
+];
+
+/* ──────────────────────────────────── ARCHITECTURE DATA ──────────────────────────────────── */
+
+const architectureNodes = {
+  frontend: [
+    { label: "Eval Suites", icon: "🧪" },
+    { label: "Dashboard", icon: "📊" },
+    { label: "Agent Watcher", icon: "🤖" },
+    { label: "Red Team", icon: "🔴" },
+  ],
+  engine: [
+    { label: "Veridian Eval Engine", sub: "Custom GroqJudge" },
+    { label: "LangGraph Agents", sub: "8-Node Watcher · 6-Node Red Team" },
+  ],
+  infra: [
+    { label: "GroqPool", sub: "3 Keys · 90 RPM", color: "#F55036" },
+    { label: "Gemini Pool", sub: "2 Keys · 30 RPM", color: "#4285F4" },
+    { label: "Neon Postgres", sub: "Serverless DB", color: "#00E5FF" },
+  ],
+};
+
+/* ──────────────────────────────────── PROBLEM STATS DATA ──────────────────────────────────── */
+
+const problemStats = [
+  { value: "$67.4B", label: "Lost to AI hallucinations in 2024", color: "from-red-500/20 to-red-900/10", border: "border-red-900/40", text: "text-red-400" },
+  { value: "80–95%", label: "AI projects fail to deliver real impact", color: "from-orange-500/20 to-orange-900/10", border: "border-orange-900/40", text: "text-orange-400" },
+  { value: "42%", label: "Companies abandoned AI initiatives by 2025", color: "from-amber-500/20 to-amber-900/10", border: "border-amber-900/40", text: "text-amber-400" },
+  { value: "4.3 hrs", label: "Per week per employee verifying AI outputs", color: "from-violet-500/10 to-violet-900/10", border: "border-violet-900/40", text: "text-violet-400" },
+  { value: "$14,200", label: "Annual hallucination tax per employee", color: "from-blue-500/10 to-blue-900/10", border: "border-blue-900/40", text: "text-blue-400" },
+  { value: "55%", label: "CIOs switched LLMs — losing months of context", color: "from-cyan-500/10 to-cyan-900/10", border: "border-cyan-900/40", text: "text-cyan-400" },
+];
+
+/* ──────────────────────────────────── MAIN PAGE COMPONENT ──────────────────────────────────── */
+
 export default function RootPage() {
   const router = useRouter();
-  
-  // -- Hero / Agent Simulation State --
   const [isSimulating, setIsSimulating] = useState(false);
   const [currentScore, setCurrentScore] = useState(0.88);
   const [regressionDetected, setRegressionDetected] = useState(false);
   const [activeNode, setActiveNode] = useState(0);
-  const [pipelineFlow, setPipelineFlow] = useState(0);
-  const [alertActive, setAlertActive] = useState(false);
-  const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
 
-  const heroRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"]
-  });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
-
-  // Demo Data
+  // Demo data for charts
   const qualityData = [
     { time: "00:00", score: 0.92 },
     { time: "04:00", score: 0.89 },
     { time: "08:00", score: 0.87 },
     { time: "12:00", score: 0.91 },
     { time: "16:00", score: 0.85 },
-    { time: "20:00", score: 0.72 }, 
+    { time: "20:00", score: 0.72 },
     { time: "24:00", score: 0.78 },
   ];
 
   const modelComparison = [
-    { model: "llama-3-70b", score: 0.88 },
-    { model: "gpt-4o", score: 0.91 },
-    { model: "claude-3.5", score: 0.85 },
+    { model: "llama-3.3-70b", score: 0.88 },
+    { model: "llama-4-maverick", score: 0.91 },
+    { model: "gemini-2.0-flash", score: 0.85 },
   ];
 
   const agentNodes = [
-    { id: "trigger", label: "Trigger Received", type: "input" },
-    { id: "load", label: "Load Eval Suite", type: "process" },
-    { id: "run", label: "Run Model", type: "process" },
-    { id: "score", label: "Score Results", type: "process" },
-    { id: "compare", label: "Compare Baseline", type: "decision" },
-    { id: "report", label: "Generate Report", type: "output" },
-    { id: "notify", label: "Notify Team", type: "output" }
+    "trigger_received",
+    "load_eval_suite",
+    "run_model",
+    "score_results",
+    "compare_baseline",
+    "root_cause",
+    "generate_report",
+    "notify"
   ];
+
+  const [pipelineFlow, setPipelineFlow] = useState(0);
+  const [alertActive, setAlertActive] = useState(false);
+  const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
 
   const simulateRegression = () => {
     setIsSimulating(true);
@@ -133,17 +203,14 @@ export default function RootPage() {
     setActiveNode(0);
     setPipelineFlow(0);
     setAlertActive(false);
-    
+
     const flowInterval = setInterval(() => {
       setPipelineFlow(prev => {
-        if (prev >= 4) {
-          clearInterval(flowInterval);
-          return prev;
-        }
+        if (prev >= 4) { clearInterval(flowInterval); return prev; }
         return prev + 1;
       });
     }, 600);
-    
+
     const nodeInterval = setInterval(() => {
       setActiveNode(prev => {
         if (prev >= agentNodes.length - 1) {
@@ -155,7 +222,7 @@ export default function RootPage() {
             setTimeout(() => {
               setIsSimulating(false);
               setAlertActive(false);
-            }, 4000);
+            }, 3000);
           }, 500);
           return prev;
         }
@@ -164,553 +231,1337 @@ export default function RootPage() {
     }, 400);
   };
 
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="bg-[#000000] min-h-screen text-[#EDEDED] font-sans selection:bg-violet-500/30 relative">
-      <GridBackground />
+    <div className="bg-[#020203] min-h-screen">
 
-      {/* Floating Glass Navbar */}
-      <motion.nav 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="fixed top-6 inset-x-0 mx-auto max-w-5xl z-50 px-6 sm:px-0 pointer-events-none"
-      >
-        <div className="mx-auto flex h-14 items-center justify-between rounded-full border border-white/10 bg-black/40 px-6 backdrop-blur-xl shadow-[0_0_15px_rgba(0,0,0,0.5)] pointer-events-auto">
-          <div className="flex items-center gap-3">
-            <Logo className="w-6 h-6 shrink-0" />
-            <span className="font-semibold text-sm tracking-wide text-white">Veridian</span>
-          </div>
-          
-          <div className="hidden md:flex items-center gap-8 text-[13px] font-medium text-[#888888]">
-            <Link href="#features" className="hover:text-white transition-colors">Features</Link>
-            <Link href="#agent" className="hover:text-white transition-colors">Agent</Link>
-            <Link href="#dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <Link href="#" className="hover:text-white transition-colors">Docs</Link>
+      {/* ═══════════════════════ NAVIGATION ═══════════════════════ */}
+      <nav className="sticky top-0 z-50 bg-[#020203]/80 backdrop-blur-md border-b border-[#1A1A1E]">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
+          <div className="font-bold text-[20px] text-[#FAFAFA] tracking-tight">
+            Veridian
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="text-[13px] font-medium text-[#888888] hover:text-white transition-colors hidden sm:block">
-              Log In
-            </button>
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/dashboard')}
-              className="relative group overflow-hidden rounded-full p-[1px]"
-            >
-              <span className="absolute inset-0 bg-linear-to-r from-violet-600 to-blue-600 rounded-full opacity-70 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></span>
-              <div className="relative bg-black rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/10 transition-colors group-hover:bg-black/50">
-                <span className="text-[13px] font-medium text-white">Get Started</span>
-                <ArrowRight size={14} className="text-violet-400 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </motion.button>
+          <div className="hidden md:flex items-center gap-8 font-medium text-[14px] text-[#71717A]">
+            <span onClick={() => scrollTo('problem')} className="hover:text-[#FAFAFA] transition cursor-pointer">Problem</span>
+            <span onClick={() => scrollTo('agent')} className="hover:text-[#FAFAFA] transition cursor-pointer">Agent</span>
+            <span onClick={() => scrollTo('architecture')} className="hover:text-[#FAFAFA] transition cursor-pointer">Architecture</span>
+            <span onClick={() => scrollTo('techstack')} className="hover:text-[#FAFAFA] transition cursor-pointer">Tech Stack</span>
           </div>
+
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="bg-linear-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white rounded-lg px-5 py-2.5 font-semibold text-[14px] transition-all hover:shadow-lg hover:shadow-violet-500/25"
+          >
+            Open Dashboard →
+          </button>
         </div>
-      </motion.nav>
+      </nav>
 
-      {/* HERO SECTION - Linear / Next.js Style */}
-      <section ref={heroRef} className="relative min-h-[100svh] flex flex-col justify-center items-center pt-32 pb-20 px-6 overflow-hidden">
-        <motion.div style={{ y, opacity }} className="max-w-5xl mx-auto w-full z-10 flex flex-col items-center">
-          
-          {/* Top Badge */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mb-8"
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 px-3 text-xs font-medium text-[#888888] backdrop-blur-md">
-              <Zap size={14} className="text-violet-400" />
-              <span className="border-l border-white/10 pl-2 ml-1">Introducing Veridian Autonomous Evaluator</span>
-            </div>
-          </motion.div>
+      {/* ═══════════════════════ HERO SECTION ═══════════════════════ */}
+      <section className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
+        {/* Ambient grid */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.5) 1px, transparent 1px)',
+          backgroundSize: '60px 60px'
+        }} />
 
-          {/* Headline */}
-          <motion.h1 
-            className="text-center font-medium tracking-tighter text-white mb-8 max-w-4xl"
-            style={{ fontSize: 'clamp(56px, 8vw, 96px)', lineHeight: 0.95 }}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-          >
-            Experience model <br className="hidden md:block" />
-            <span className="relative inline-block">
-              <span className="text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/40">
-                absolute certainty.
-              </span>
-              <motion.span 
-                className="absolute inset-0 bg-linear-to-r from-transparent via-violet-400/20 to-transparent -skew-x-12"
-                animate={{ x: ["-100%", "200%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
-              />
-            </span>
-          </motion.h1>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-          <motion.p 
-            className="text-center text-[#888888] text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            The truth layer for enterprise AI. Veridian continuously evaluates your LLMs, detects regressions, and alerts your team before quality drops in production.
-          </motion.p>
-
-          <motion.div 
-            className="flex flex-col sm:flex-row items-center gap-4 mb-20"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="bg-white text-black px-6 py-3 rounded-full text-sm font-semibold hover:bg-[#EAEAEA] transition-colors flex items-center gap-2 group w-full sm:w-auto justify-center shadow-[0_0_30px_rgba(255,255,255,0.15)]"
-            >
-              Start Evaluating
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button className="bg-white/5 border border-white/10 text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-white/10 transition-colors w-full sm:w-auto justify-center">
-              Read Documentation
-            </button>
-          </motion.div>
-
-          {/* REAL-TIME PIPELINE VIZ */}
+          {/* LEFT — Hero Content */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.7, ease: "easeOut" }}
-            className="w-full relative"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="z-10"
           >
-            <div className="absolute -inset-1 bg-linear-to-r from-violet-600 to-blue-600 rounded-[32px] blur-2xl opacity-20 transform -translate-y-4"></div>
-            
-            <div className="relative bg-[#09090B] border border-white/10 rounded-[32px] p-8 md:p-12 shadow-2xl overflow-hidden">
-              {/* Grid inside container */}
-              <div className="absolute inset-0 bg-[url('https://res.cloudinary.com/djeghrtji/image/upload/v1714421876/grid-dark_s5k5hx.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20"></div>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="inline-flex items-center gap-2 bg-violet-950/30 border border-violet-800/40 text-violet-300 px-4 py-1.5 rounded-full text-sm font-medium mb-8"
+            >
+              <Zap size={14} /> Open-Source AI Quality Infrastructure
+            </motion.div>
 
-              <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-12">
-                
-                {/* Visualizer Flow */}
-                <div className="flex-1 w-full flex items-center justify-between relative">
-                  {/* Connection Line with Kinetic Pulse */}
-                  <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/5 -translate-y-1/2 overflow-hidden">
-                    {/* Continuous subtle flow */}
-                    <motion.div 
-                      className="absolute top-0 bottom-0 w-64 bg-linear-to-r from-transparent via-violet-500/10 to-transparent opacity-50"
-                      animate={{ left: ['-100%', '200%'] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                    />
-                    
-                    {/* Simulation Packets */}
-                    {isSimulating && (
-                      <AnimatePresence>
-                        {[...Array(3)].map((_, i) => (
-                          <motion.div 
-                            key={i}
-                            initial={{ left: "-10%" }}
-                            animate={{ left: "110%" }}
-                            transition={{ 
-                              duration: 2, 
-                              delay: i * 0.6, 
-                              repeat: Infinity, 
-                              ease: "easeInOut" 
-                            }}
-                            className="absolute top-0 bottom-0 w-20 bg-linear-to-r from-transparent via-blue-400 to-transparent z-20"
-                          />
-                        ))}
-                      </AnimatePresence>
-                    )}
-                  </div>
+            <motion.h1
+              className="font-bold text-[#FAFAFA] mb-8"
+              style={{ fontSize: 'clamp(48px, 5.5vw, 68px)', lineHeight: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              Catch{' '}
+              <motion.span
+                className="bg-linear-to-r from-violet-400 via-blue-400 to-violet-400 bg-clip-text text-transparent bg-size-[200%_100%]"
+                animate={{ backgroundPosition: ['0% 0%', '100% 0%', '0% 0%'] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              >
+                AI regressions
+              </motion.span>
+              <br />
+              before your users do.
+            </motion.h1>
 
-                  {[
-                    { id: 'input', label: 'Trigger', icon: Activity, active: pipelineFlow >= 0 },
-                    { id: 'model', label: 'Target Model', icon: Cpu, active: pipelineFlow >= 1 },
-                    { id: 'engine', label: 'Eval Engine', icon: Layers, active: pipelineFlow >= 2 },
-                    { id: 'score', label: 'Scoring', icon: BarChart3, active: pipelineFlow >= 3 },
-                    { id: 'alert', label: 'Monitor', icon: AlertTriangle, active: pipelineFlow >= 4 }
-                  ].map((node, index) => (
-                    <div key={node.id} className="relative flex flex-col items-center gap-4 z-10">
-                      <motion.div
-                        className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border backdrop-blur-md transition-all duration-500
-                          ${node.active 
-                            ? alertActive && index === 4 
-                              ? 'bg-red-500/10 border-red-500/50 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)]'
-                              : 'bg-violet-500/10 border-violet-500/50 text-violet-400 shadow-[0_0_20px_rgba(139,92,246,0.3)]'
-                            : 'bg-black/50 border-white/10 text-[#555]'
-                          }
-                        `}
-                        animate={alertActive && index === 4 ? { scale: [1, 1.1, 1] } : {}}
-                        transition={{ duration: 0.5, repeat: alertActive && index === 4 ? Infinity : 0 }}
-                      >
-                        <node.icon size={24} strokeWidth={1.5} />
-                      </motion.div>
-                      <span className="text-[11px] font-mono tracking-wider uppercase text-[#888] absolute -bottom-8 whitespace-nowrap hidden md:block">
-                        {node.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            <motion.p
+              className="text-[#A1A1AA] text-xl leading-relaxed mb-10 max-w-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              Veridian continuously evaluates your AI models, detects quality drops autonomously, and alerts you — before production breaks.
+            </motion.p>
 
-                {/* Score Controller Card */}
-                <div className="w-full md:w-80 bg-black/40 border border-white/5 rounded-2xl p-6 backdrop-blur-xl">
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <div className="text-xs font-mono text-[#888] mb-1">CURRENT BASELINE</div>
-                      <div className={`text-4xl font-light font-mono tracking-tight transition-colors duration-500 ${regressionDetected ? 'text-red-500' : 'text-white'}`}>
-                        {currentScore.toFixed(2)}
-                      </div>
-                    </div>
-                    {regressionDetected && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-mono px-2 py-1 rounded"
-                      >
-                        FAILING
-                      </motion.div>
-                    )}
-                  </div>
+            {/* CTA Buttons */}
+            <motion.div
+              className="flex flex-col sm:flex-row gap-4 mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(139,92,246,0.5)" }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => router.push('/dashboard')}
+                className="bg-linear-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white px-8 py-4 text-base font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl"
+              >
+                Open Dashboard →
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05, borderColor: "#3F3F46", backgroundColor: "rgba(63, 63, 70, 0.1)" }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => scrollTo('problem')}
+                className="border border-[#27272A] bg-transparent text-[#A1A1AA] px-8 py-4 text-base font-medium rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                Explore Below <ChevronDown size={18} />
+              </motion.button>
+            </motion.div>
 
-                  <button
-                    onClick={simulateRegression}
-                    disabled={isSimulating}
-                    className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-colors duration-200 py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSimulating ? (
-                      <><Loader2 size={16} className="animate-spin text-violet-400" /> Processing...</>
-                    ) : (
-                      <><Zap size={16} className="text-violet-400 group-hover:scale-110 transition-transform" /> Simulate Regression</>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
+            {/* Trust Row */}
+            <motion.div
+              className="flex flex-wrap gap-6 text-base text-[#71717A]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
+              {[
+                { icon: CheckCircle, text: "No infra setup", color: "text-green-400" },
+                { icon: Bot, text: "Works with any LLM", color: "text-violet-400" },
+                { icon: Shield, text: "DPDP audit-ready", color: "text-blue-400" }
+              ].map((item, index) => (
+                <motion.div
+                  key={item.text}
+                  className="flex items-center gap-3"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.9 + index * 0.1 }}
+                >
+                  <item.icon size={20} className={item.color} />
+                  <span>{item.text}</span>
+                </motion.div>
+              ))}
+            </motion.div>
           </motion.div>
 
-        </motion.div>
-      </section>
-
-
-      {/* BENTO GRID FEATURES */}
-      <section id="features" className="py-24 px-6 relative z-20 bg-black">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-16">
-            <h2 className="text-3xl md:text-4xl font-medium tracking-tight mb-4">Infrastructure designed for <span className="text-violet-400">certainty.</span></h2>
-            <p className="text-[#888888] text-lg max-w-2xl">A complete testing suite built from the ground up to prevent AI failures without slowing down your shipping velocity.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[320px]">
-            {/* Box 1: Langgraph Pipeline */}
-            <SpotlightCard className="md:col-span-2 bg-linear-to-b from-[#0C0C0E] to-[#010101] border border-white/5 rounded-[32px] p-10 group/card">
-              <div className="absolute inset-0 bg-radial-gradient(ellipse_at_top_left,rgba(139,92,246,0.05),transparent_70%) opacity-0 group-hover/card:opacity-100 transition-opacity duration-700"></div>
-              <div className="relative z-10 h-full flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 rounded-2xl bg-[#111111] border border-white/10 flex items-center justify-center mb-8 shadow-inner shadow-white/5 group-hover/card:border-violet-500/50 transition-colors">
-                    <Spline size={24} className="text-violet-400" />
-                  </div>
-                  <h3 className="text-2xl font-medium mb-4 text-white">Agentic Watchdog</h3>
-                  <p className="text-[#888] text-[15px] max-w-lg leading-relaxed font-light">
-                    Powered by LangGraph, our autonomous agent executes a 7-step evaluation pipeline, ensuring comprehensive quality assessment with zero human intervention.
-                  </p>
-                </div>
-                
-                {/* Advanced Graph Viz */}
-                <div className="relative h-28 mt-10 rounded-2xl border border-white/5 bg-black/40 overflow-hidden flex items-center px-8">
-                  <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.02)_50%,transparent_100%)] bg-[size:200%_100%] animate-[bg-pan_4s_linear_infinite]"></div>
-                  <div className="w-full flex items-center justify-between text-[#444]">
-                    {[0,1,2,3,4,5].map(idx => (
-                      <div key={idx} className="flex items-center flex-1">
-                        <motion.div 
-                          animate={idx === activeNode % 6 ? { 
-                            scale: [1, 1.2, 1],
-                            borderColor: ["rgba(139,92,246,0.1)", "rgba(139,92,246,0.5)", "rgba(139,92,246,0.1)"]
-                          } : {}}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                          className={`w-10 h-10 rounded-xl border border-white/10 flex items-center justify-center bg-black/80 relative z-10
-                            ${idx === activeNode % 6 ? 'text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.2)]' : ''}
-                          `}
-                        >
-                          <div className={`w-2 h-2 rounded-full ${idx === activeNode % 6 ? 'bg-violet-400 animate-pulse' : 'bg-[#333]'}`}></div>
-                        </motion.div>
-                        {idx < 5 && (
-                          <div className="flex-1 h-[1px] bg-linear-to-r from-white/10 to-white/10 relative">
-                            {idx === activeNode % 5 && (
-                              <motion.div 
-                                initial={{ left: "-100%" }}
-                                animate={{ left: "100%" }}
-                                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                                className="absolute top-0 bottom-0 w-8 bg-linear-to-r from-transparent via-violet-400/40 to-transparent"
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          {/* RIGHT — Pipeline Visualization */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+            className="relative z-10"
+          >
+            <div className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-3xl p-10 relative overflow-hidden">
+              {/* Grid */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'linear-gradient(rgba(139,92,246,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.1) 1px, transparent 1px)',
+                  backgroundSize: '40px 40px'
+                }} />
               </div>
-            </SpotlightCard>
 
-            {/* Box 2: Three Key Architecture */}
-            <SpotlightCard className="bg-linear-to-b from-[#0C0C0E] to-[#010101] border border-white/5 rounded-[32px] p-10 group/card">
-              <div className="absolute inset-0 bg-radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.05),transparent_70%) opacity-0 group-hover/card:opacity-100 transition-opacity duration-700"></div>
-              <div className="h-full flex flex-col justify-between relative z-10">
-                <div>
-                  <div className="w-12 h-12 rounded-2xl bg-[#111111] border border-white/10 flex items-center justify-center mb-8 shadow-inner shadow-white/5 group-hover/card:border-blue-500/50 transition-colors">
-                    <Database size={24} className="text-blue-400" />
-                  </div>
-                  <h3 className="text-2xl font-medium mb-4 text-white">Isolated Inference</h3>
-                  <p className="text-[#888] text-[15px] leading-relaxed font-light">
-                    Our 3-key Groq architecture separates runner pools from judge models. Zero state bleed. Deterministic scoring at `temperature=0`.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3 mt-8">
-                  {['Key Runner A', 'Key Runner B', 'Consensus Judge'].map((k, i) => (
-                    <div key={k} className="flex items-center gap-3 bg-white/5 rounded-xl border border-white/5 p-3 group/item">
-                      <div className={`w-2 h-2 rounded-full ${i === 2 ? 'bg-blue-400' : 'bg-white/40'}`}></div>
-                      <span className="text-[11px] font-mono text-[#666] group-hover/item:text-[#AAA] transition-colors">{k}</span>
-                    </div>
+              {/* Pipeline Nodes */}
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-12">
+                  {[
+                    { name: 'Input', icon: '→', active: pipelineFlow >= 0 },
+                    { name: 'Model', icon: '🤖', active: pipelineFlow >= 1 },
+                    { name: 'Eval Engine', icon: '⚡', active: pipelineFlow >= 2 },
+                    { name: 'Score', icon: '📊', active: pipelineFlow >= 3 },
+                    { name: 'Alert', icon: '🚨', active: pipelineFlow >= 4 }
+                  ].map((node, index) => (
+                    <motion.div
+                      key={node.name}
+                      className="flex flex-col items-center"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.5, delay: 0.1 * index }}
+                    >
+                      <motion.div
+                        className={`w-16 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl transition-all duration-500 ${
+                          node.active
+                            ? alertActive && index === 4
+                              ? 'border-red-500 bg-red-950/40 animate-pulse shadow-[0_0_30px_rgba(239,68,68,0.6)]'
+                              : 'border-violet-500 bg-violet-950/40 shadow-[0_0_20px_rgba(139,92,246,0.4)]'
+                            : 'border-[#27272A] bg-[#1A1A1A]'
+                        }`}
+                        animate={alertActive && index === 4 ? {
+                          x: [0, -2, 2, -2, 2, 0],
+                          y: [0, -2, 2, -2, 2, 0]
+                        } : {}}
+                        transition={{ duration: 0.3, repeat: alertActive && index === 4 ? Infinity : 0 }}
+                      >
+                        {node.icon}
+                      </motion.div>
+                      <span className="text-xs font-mono text-[#52525B] mt-3">{node.name}</span>
+                    </motion.div>
                   ))}
                 </div>
-              </div>
-            </SpotlightCard>
 
-            {/* Box 3: Multi-Model Compare */}
-            <SpotlightCard className="bg-linear-to-b from-[#0C0C0E] to-[#010101] border border-white/5 rounded-[32px] p-10 group/card">
-               <div className="h-full flex flex-col justify-between relative z-10">
-                <div>
-                  <div className="w-12 h-12 rounded-2xl bg-[#111111] border border-white/10 flex items-center justify-center mb-8 shadow-inner shadow-white/5 group-hover/card:border-white/50 transition-colors">
-                    <GitBranch size={24} className="text-white opacity-80" />
-                  </div>
-                  <h3 className="text-2xl font-medium mb-4 text-white">Model Agnostic</h3>
-                  <p className="text-[#888] text-[15px] leading-relaxed font-light">
-                    Run the same evaluation suite against Llama-3, GPT-4, and Claude simultaneously. Side-by-side comparison in seconds.
-                  </p>
-                </div>
-                <div className="space-y-4 mt-8">
-                  {modelComparison.map((m, i) => (
-                    <div key={m.model} className="space-y-2">
-                      <div className="flex justify-between text-[10px] font-mono text-[#555]">
-                        <span>{m.model}</span>
-                        <span>{(m.score * 100).toFixed(0)}%</span>
-                      </div>
-                      <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${m.score * 100}%` }}
-                          transition={{ duration: 1, delay: i * 0.1 }}
-                          className="h-full bg-linear-to-r from-violet-500/50 to-blue-500/50"
-                        />
-                      </div>
-                    </div>
+                {/* Connecting Lines */}
+                <div className="relative h-12 mb-8">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <motion.div
+                      key={index}
+                      className="absolute top-1/2 h-0.5 bg-linear-to-r from-violet-500 to-blue-500"
+                      style={{
+                        left: `${(index + 1) * 20 - 8}%`,
+                        width: '16%',
+                        transform: 'translateY(-50%)'
+                      }}
+                      initial={{ scaleX: 0, opacity: 0 }}
+                      animate={{
+                        scaleX: pipelineFlow > index ? 1 : 0,
+                        opacity: pipelineFlow > index ? 1 : 0
+                      }}
+                      transition={{ duration: 0.5, delay: 0.2 * index }}
+                    />
+                  ))}
+                  {isSimulating && Array.from({ length: 3 }).map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute top-1/2 w-2 h-2 bg-violet-400 rounded-full"
+                      style={{ transform: 'translateY(-50%)' }}
+                      animate={{ left: ['8%', '92%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear", delay: i * 0.7 }}
+                    />
                   ))}
                 </div>
-              </div>
-            </SpotlightCard>
 
-            {/* Box 4: Security Vault */}
-            <SpotlightCard className="md:col-span-2 bg-linear-to-b from-[#0C0C0E] to-[#010101] border border-white/5 rounded-[32px] p-10 group/card overflow-hidden">
-              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 blur-[80px] -translate-y-1/2 translate-x-1/2 rounded-full pointer-events-none"></div>
-              <div className="flex flex-col md:flex-row gap-12 h-full relative z-10">
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="w-12 h-12 rounded-2xl bg-[#111111] border border-white/10 flex items-center justify-center mb-8 shadow-inner shadow-white/5 group-hover/card:border-emerald-500/50 transition-colors">
-                      <Shield size={24} className="text-emerald-400" />
-                    </div>
-                    <h3 className="text-2xl font-medium mb-4 text-white">Audit Ready & Compliant</h3>
-                    <p className="text-[#888] text-[15px] leading-relaxed font-light max-w-sm">
-                      Veridian maintains a cryptographic audit trail of every test case, designed specifically for DPDP and SOC2 compliance records.
-                    </p>
+                {/* Score Display */}
+                <motion.div
+                  className="text-center mb-8"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                >
+                  <div className="relative inline-block">
+                    <motion.div
+                      className="text-6xl font-mono font-bold mb-2"
+                      style={{
+                        color: regressionDetected ? '#EF4444' : '#22C55E',
+                        textShadow: regressionDetected ? '0 0 20px rgba(239,68,68,0.5)' : '0 0 20px rgba(34,197,94,0.5)'
+                      }}
+                      animate={regressionDetected ? { scale: [1, 1.1, 1] } : {}}
+                      transition={{ duration: 0.5, repeat: regressionDetected ? 2 : 0 }}
+                    >
+                      {currentScore.toFixed(2)}
+                    </motion.div>
+                    {regressionDetected && (
+                      <motion.div
+                        className="absolute -top-4 -right-4 text-red-400 text-2xl"
+                        animate={{ rotate: [0, -10, 10, -10, 0] }}
+                        transition={{ duration: 0.5, repeat: 2 }}
+                      >
+                        ↓
+                      </motion.div>
+                    )}
                   </div>
-                  <div className="flex gap-4 mt-10">
-                    <span className="text-[10px] font-mono border border-white/5 bg-white/5 px-4 py-1.5 rounded-full text-[#666] uppercase tracking-widest">DPDP Compliant</span>
-                    <span className="text-[10px] font-mono border border-white/5 bg-white/5 px-4 py-1.5 rounded-full text-[#666] uppercase tracking-widest">SOC 2 Type II</span>
+                  <div className="text-base text-[#71717A] font-mono">
+                    {regressionDetected ? 'REGRESSION DETECTED' : 'QUALITY SCORE'}
                   </div>
-                </div>
-                
-                {/* 3D-ish Document Stack */}
-                <div className="hidden md:flex flex-1 justify-center items-center relative py-10">
-                   <div className="absolute inset-0 bg-radial-gradient(circle,rgba(16,185,129,0.05),transparent_70%)"></div>
-                   <motion.div 
-                     whileHover={{ y: -5, rotate: 5 }}
-                     className="w-56 aspect-[3/4] bg-[#0F0F11] border border-white/10 rounded-2xl p-6 shadow-2xl relative z-20"
-                   >
-                     <div className="flex items-center gap-2 mb-6 pb-4 border-b border-white/5">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                          <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
-                        </div>
-                        <span className="text-[10px] font-mono text-[#555]">AUDIT_LOG_04.24</span>
-                     </div>
-                     <div className="space-y-3">
-                       <div className="h-1.5 w-full bg-white/5 rounded-full opacity-60"></div>
-                       <div className="h-1.5 w-4/5 bg-white/5 rounded-full opacity-60"></div>
-                       <div className="h-1.5 w-full bg-white/5 rounded-full opacity-60"></div>
-                       <div className="h-1.5 w-3/5 bg-white/5 rounded-full opacity-60 mt-6"></div>
-                     </div>
-                     <motion.div 
-                       animate={{ opacity: [0.4, 0.7, 0.4] }}
-                       transition={{ duration: 2, repeat: Infinity }}
-                       className="absolute bottom-6 right-6 flex items-center gap-1.5"
-                     >
-                       <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                       <span className="text-[9px] font-bold text-emerald-500 tracking-tighter">SECURED</span>
-                     </motion.div>
-                   </motion.div>
-                   <div className="absolute w-56 aspect-[3/4] bg-[#070708] border border-white/10 rounded-2xl -translate-x-6 translate-y-6 rotate-[-4deg] z-10 opacity-50"></div>
-                </div>
-              </div>
-            </SpotlightCard>
+                </motion.div>
 
-          </div>
+                {/* Simulate Button */}
+                <motion.button
+                  whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(139,92,246,0.3)" }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={simulateRegression}
+                  disabled={isSimulating}
+                  className="w-full bg-linear-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white px-6 py-4 rounded-xl font-mono text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  {isSimulating ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="animate-spin" size={20} />
+                      Simulating Regression...
+                    </span>
+                  ) : (
+                    'Simulate Regression →'
+                  )}
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Glow */}
+            <motion.div
+              className="absolute inset-0 bg-linear-to-r from-violet-600/20 to-blue-600/20 rounded-3xl blur-xl -z-10"
+              animate={alertActive ? { scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] } : {}}
+              transition={{ duration: 2, repeat: alertActive ? Infinity : 0 }}
+            />
+          </motion.div>
         </div>
       </section>
 
+      {/* ═══════════════════════ PROBLEM STATS SECTION ═══════════════════════ */}
+      <section id="problem" className="py-28 px-6 bg-[#020203] relative overflow-hidden">
+        {/* Background radial */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(239,68,68,0.05)_0%,transparent_60%)]" />
 
-      {/* DASHBOARD VISUALIZATION */}
-      <section id="dashboard" className="py-24 px-6 relative z-20 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-medium tracking-tight mb-4">Granular insights.</h2>
-              <p className="text-[#888888] text-lg max-w-xl">Deep dive into specific metrics like hallucination, faithfulness, and answer relevancy. Pinpoint exactly where your model breaks down.</p>
-            </div>
-            <button className="hidden md:flex items-center gap-2 text-sm text-white hover:text-violet-400 transition-colors mt-6 md:mt-0">
-               View Live Demo <ArrowUpRight size={16} />
-            </button>
+        <div className="max-w-6xl mx-auto relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 bg-red-950/30 border border-red-900/40 text-red-400 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+            >
+              <AlertTriangle size={14} /> The Problem
+            </motion.div>
+            <h2 className="font-bold text-[#FAFAFA] text-5xl mb-6">
+              AI teams are flying blind
+            </h2>
+            <p className="text-[#A1A1AA] text-xl max-w-2xl mx-auto">
+              Models silently regress, hallucinations go undetected, and nobody knows until users are harmed. This is costing enterprises billions.
+            </p>
+          </motion.div>
+
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {problemStats.slice(0, 3).map((stat, index) => (
+              <motion.div
+                key={stat.value}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.15, duration: 0.6 }}
+                whileHover={{ scale: 1.03, borderColor: 'rgba(239,68,68,0.5)' }}
+                className={`bg-gradient-to-br ${stat.color} border ${stat.border} rounded-2xl p-8 text-center transition-all duration-300`}
+              >
+                <motion.div
+                  className={`text-5xl font-bold ${stat.text} mb-3 font-mono`}
+                  initial={{ scale: 0.5 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.15 + 0.2, type: "spring", stiffness: 200 }}
+                >
+                  {stat.value}
+                </motion.div>
+                <p className="text-[#A1A1AA] text-base leading-relaxed">{stat.label}</p>
+              </motion.div>
+            ))}
           </div>
 
-          <div className="bg-[#0A0A0A] border border-white/10 rounded-[32px] p-2 md:p-6 shadow-2xl">
-            <div className="bg-[#000] border border-white/5 rounded-[24px] p-6 lg:p-10 w-full">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6">
-                <div>
-                  <div className="text-xl font-medium mb-1">Quality Over Time</div>
-                  <div className="text-sm text-[#666]">Medical Triage Suite v2 • Llama-3.3-70b</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-xs font-mono bg-white/5 px-3 py-1.5 rounded-md">
-                    <div className="w-2 h-2 rounded-full bg-violet-500"></div>
-                    Quality Score
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {problemStats.slice(3, 6).map((stat, index) => (
+              <motion.div
+                key={stat.value}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.45 + index * 0.15, duration: 0.6 }}
+                whileHover={{ scale: 1.03 }}
+                className={`bg-gradient-to-br ${stat.color} border ${stat.border} rounded-2xl p-6 text-center transition-all duration-300`}
+              >
+                <motion.div
+                  className={`text-3xl font-bold ${stat.text} mb-2 font-mono`}
+                  initial={{ scale: 0.5 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.45 + index * 0.15 + 0.2, type: "spring", stiffness: 200 }}
+                >
+                  {stat.value}
+                </motion.div>
+                <p className="text-[#71717A] text-sm leading-relaxed">{stat.label}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Bottom quote */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.9 }}
+            className="text-center text-[#52525B] text-base mt-12 max-w-2xl mx-auto italic"
+          >
+            &ldquo;Every model switch throws away months of accumulated evaluation context. There is no version control for AI quality.&rdquo;
+          </motion.p>
+        </div>
+      </section>
+
+      {/* ═══════════════════════ AGENT SECTION ═══════════════════════ */}
+      <section id="agent" className="py-24 px-6 bg-[#0A0A0B]">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 bg-violet-950/30 border border-violet-800/40 text-violet-300 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+            >
+              <Bot size={14} /> Agentic Architecture
+            </motion.div>
+            <h2 className="font-bold text-[#FAFAFA] text-4xl mb-4">
+              Your AI now has a watchdog.
+            </h2>
+            <p className="text-[#A1A1AA] text-lg max-w-2xl mx-auto">
+              An 8-node LangGraph agent monitors your models autonomously, catching regressions with zero human intervention.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="font-semibold text-[#FAFAFA] text-3xl mb-6">
+                LangGraph-Powered Pipeline
+              </h3>
+              <p className="text-[#A1A1AA] text-lg mb-8 leading-relaxed">
+                Our autonomous agent executes an 8-step evaluation pipeline — from triggering on model changes to firing Slack & Telegram alerts with full root cause analysis.
+              </p>
+
+              <div className="space-y-4">
+                {[
+                  { icon: Eye, text: "Continuous deployment monitoring", color: "text-green-400" },
+                  { icon: Activity, text: "Real-time scoring via GroqJudge (temp=0)", color: "text-violet-400" },
+                  { icon: Brain, text: "Root cause analysis on failure clusters", color: "text-cyan-400" },
+                  { icon: AlertTriangle, text: "Instant regression alerts (Slack + Telegram)", color: "text-red-400" },
+                  { icon: Shield, text: "Full audit trail — every step logged", color: "text-blue-400" }
+                ].map((item, index) => (
+                  <motion.div
+                    key={item.text}
+                    className="flex items-center gap-4"
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <div className={`w-12 h-12 rounded-xl bg-[#0A0A0B] border ${item.color.replace('text-', 'border-')} flex items-center justify-center`}>
+                      <item.icon size={24} className={item.color} />
+                    </div>
+                    <span className="text-[#A1A1AA] text-base">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Right — Agent Graph */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-[#020203] border border-[#1A1A1E] rounded-3xl p-10 relative overflow-hidden"
+            >
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'radial-gradient(circle, rgba(139,92,246,0.1) 1px, transparent 1px)',
+                  backgroundSize: '30px 30px'
+                }} />
               </div>
 
-              {/* Chart */}
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={qualityData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <div className="relative z-10">
+                <div className="relative h-96">
+                  {agentNodes.map((node, index) => {
+                    const positions = [
+                      { x: 50, y: 5 },
+                      { x: 20, y: 22 },
+                      { x: 80, y: 22 },
+                      { x: 50, y: 40 },
+                      { x: 20, y: 58 },
+                      { x: 80, y: 58 },
+                      { x: 50, y: 76 },
+                      { x: 50, y: 93 }
+                    ];
+                    const pos = positions[index];
+
+                    return (
+                      <motion.div key={node}>
+                        <motion.div
+                          className="absolute w-20 h-20 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer"
+                          style={{
+                            left: `${pos.x}%`,
+                            top: `${pos.y}%`,
+                            transform: 'translate(-50%, -50%)',
+                            borderColor: index < activeNode ? '#22C55E' :
+                              index === activeNode ? '#8B5CF6' : '#27272A',
+                            backgroundColor: index < activeNode ? 'rgba(34,197,94,0.1)' :
+                              index === activeNode ? 'rgba(139,92,246,0.1)' : 'rgba(26,26,26,0.5)',
+                            boxShadow: index === activeNode ? '0 0 30px rgba(139,92,246,0.5)' :
+                              index < activeNode ? '0 0 20px rgba(34,197,94,0.3)' : 'none'
+                          }}
+                          whileHover={{ scale: 1.1 }}
+                          animate={index === activeNode ? {
+                            scale: [1, 1.05, 1], opacity: [1, 0.8, 1]
+                          } : {}}
+                          transition={{ duration: 1, repeat: index === activeNode ? Infinity : 0 }}
+                        >
+                          <div className="text-xs font-mono text-[#52525B] mb-1">
+                            {String(index + 1).padStart(2, '0')}
+                          </div>
+                          <div className={`text-[10px] font-mono text-center px-1 leading-tight ${
+                            index < activeNode ? 'text-green-400' :
+                              index === activeNode ? 'text-violet-400' : 'text-[#52525B]'
+                          }`}>
+                            {node.replace(/_/g, '\n')}
+                          </div>
+                        </motion.div>
+
+                        {index < activeNode && (
+                          <motion.div
+                            className="absolute w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"
+                            style={{
+                              left: `calc(${pos.x}% + 30px)`,
+                              top: `calc(${pos.y}% - 18px)`,
+                              transform: 'translate(-50%, -50%)'
+                            }}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.2 }}
+                          >
+                            <CheckCircle size={14} className="text-white" />
+                          </motion.div>
+                        )}
+
+                        {index === activeNode && (
+                          <motion.div
+                            className="absolute w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center"
+                            style={{
+                              left: `calc(${pos.x}% + 30px)`,
+                              top: `calc(${pos.y}% - 18px)`,
+                              transform: 'translate(-50%, -50%)'
+                            }}
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          >
+                            <Activity size={14} className="text-white animate-pulse" />
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none">
                     <defs>
-                      <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                      <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.3" />
                       </linearGradient>
                     </defs>
-                    <XAxis 
-                      dataKey="time" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#555', fontSize: 12 }} 
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#555', fontSize: 12 }} 
-                      domain={[0, 1]}
-                      dx={-10}
-                    />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}
-                      itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 500 }}
-                      labelStyle={{ color: '#888', fontSize: '12px', marginBottom: '4px' }}
-                    />
-                    <ReferenceLine y={0.75} stroke="#ef4444" strokeDasharray="3 3" opacity={0.5} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="score" 
-                      stroke="#8b5cf6" 
-                      strokeWidth={2}
-                      fillOpacity={1} 
-                      fill="url(#colorScore)" 
-                      activeDot={{ r: 6, fill: '#fff', stroke: '#8b5cf6', strokeWidth: 2 }}
-                    />
-                  </AreaChart>
+
+                    {[
+                      { from: 0, to: 1 }, { from: 0, to: 2 },
+                      { from: 1, to: 3 }, { from: 2, to: 3 },
+                      { from: 3, to: 4 }, { from: 3, to: 5 },
+                      { from: 4, to: 6 }, { from: 5, to: 6 },
+                      { from: 6, to: 7 }
+                    ].map((conn, index) => {
+                      const positions = [
+                        { x: 50, y: 5 }, { x: 20, y: 22 }, { x: 80, y: 22 },
+                        { x: 50, y: 40 }, { x: 20, y: 58 }, { x: 80, y: 58 },
+                        { x: 50, y: 76 }, { x: 50, y: 93 }
+                      ];
+                      const from = positions[conn.from];
+                      const to = positions[conn.to];
+                      const isActive = activeNode > conn.from && activeNode > conn.to;
+
+                      return (
+                        <motion.line
+                          key={index}
+                          x1={`${from.x}%`} y1={`${from.y}%`}
+                          x2={`${to.x}%`} y2={`${to.y}%`}
+                          stroke="url(#lineGradient)"
+                          strokeWidth="2"
+                          strokeDasharray={isActive ? "0" : "5,5"}
+                          opacity={isActive ? 1 : 0.3}
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 0.5, delay: 0.1 * index }}
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                <AnimatePresence>
+                  {regressionDetected && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="absolute bottom-4 left-4 right-4 bg-red-950/40 border border-red-900 rounded-xl p-4"
+                    >
+                      <div className="flex items-center justify-center gap-3 text-red-400 font-mono">
+                        <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 0.5, repeat: 2 }}>
+                          <AlertTriangle size={24} />
+                        </motion.div>
+                        <span className="text-base font-semibold">REGRESSION DETECTED — 0.88 → 0.54</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════ DASHBOARD SECTION ═══════════════════════ */}
+      <section className="py-24 px-6 bg-[#020203]">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-20"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 bg-blue-950/30 border border-blue-800/40 text-blue-300 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+            >
+              <BarChart3 size={14} /> Quality Dashboard
+            </motion.div>
+            <h2 className="font-bold text-[#FAFAFA] text-5xl mb-6">
+              Track quality over time
+            </h2>
+            <p className="text-[#A1A1AA] text-xl max-w-2xl mx-auto">
+              Per-metric trends, model comparisons, regression indicators — all in one real-time dashboard.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {/* Quality Trends */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1, duration: 0.8 }}
+              whileHover={{ scale: 1.02, boxShadow: "0 0 40px rgba(139,92,246,0.2)", borderColor: "#8B5CF6" }}
+              className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-3xl p-8 transition-all duration-300"
+            >
+              <h3 className="font-semibold text-[#FAFAFA] text-xl mb-6">Quality Trends</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={qualityData}>
+                    <Line type="monotone" dataKey="score" stroke="#8B5CF6" strokeWidth={3} dot={false} animationDuration={2000} />
+                    <ReferenceLine y={0.75} stroke="#F59E0B" strokeDasharray="8 4" strokeWidth={2} />
+                    <Dot cx={120} cy={72} r={6} fill="#EF4444" stroke="#fff" strokeWidth={2} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
+              <div className="mt-6 flex items-center justify-between">
+                <span className="text-[#71717A] text-sm">Regression detected</span>
+                <span className="text-red-400 font-mono text-sm">0.72 → 0.54</span>
+              </div>
+            </motion.div>
 
-              {/* Mini Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white/5">
+            {/* Model Comparison */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              whileHover={{ scale: 1.02, boxShadow: "0 0 40px rgba(139,92,246,0.2)", borderColor: "#8B5CF6" }}
+              className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-3xl p-8 transition-all duration-300"
+            >
+              <h3 className="font-semibold text-[#FAFAFA] text-xl mb-6">Compare Models</h3>
+              <div className="space-y-4">
+                {modelComparison.map((model, index) => (
+                  <motion.div
+                    key={model.model}
+                    className="flex items-center justify-between"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3 + index * 0.1 }}
+                    onMouseEnter={() => setHoveredMetric(model.model)}
+                    onMouseLeave={() => setHoveredMetric(null)}
+                  >
+                    <span className={`font-mono text-sm transition-colors ${
+                      hoveredMetric === model.model ? 'text-[#FAFAFA]' : 'text-[#71717A]'
+                    }`}>
+                      {model.model}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 h-3 bg-[#1A1A1E] rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-linear-to-r from-violet-500 to-blue-500 rounded-full"
+                          style={{ width: `${model.score * 100}%` }}
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${model.score * 100}%` }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1, delay: 0.4 + index * 0.1 }}
+                        />
+                      </div>
+                      <span className={`font-mono text-sm transition-colors ${
+                        hoveredMetric === model.model ? 'text-[#FAFAFA]' : 'text-[#A1A1AA]'
+                      }`}>
+                        {model.score}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Metric Breakdown */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              whileHover={{ scale: 1.02, boxShadow: "0 0 40px rgba(139,92,246,0.2)", borderColor: "#8B5CF6" }}
+              className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-3xl p-8 transition-all duration-300"
+            >
+              <h3 className="font-semibold text-[#FAFAFA] text-xl mb-6">Metric Breakdown</h3>
+              <div className="space-y-4">
                 {[
-                  { label: "Correctness", val: "0.92", change: "+0.02", ok: true },
-                  { label: "Faithfulness", val: "0.88", change: "-0.01", ok: true },
-                  { label: "Hallucination", val: "0.15", change: "+0.12", ok: false }, // Lower is better technically, but modeled as score here
-                  { label: "Relevancy", val: "0.94", change: "+0.01", ok: true }
-                ].map((m, i) => (
-                  <motion.div 
-                    key={i} 
+                  { metric: "hallucination", score: 0.15, color: "bg-red-500", label: "Critical" },
+                  { metric: "correctness", score: 0.88, color: "bg-green-500", label: "Excellent" },
+                  { metric: "faithfulness", score: 0.92, color: "bg-green-500", label: "Excellent" },
+                  { metric: "relevancy", score: 0.94, color: "bg-green-500", label: "Excellent" },
+                ].map((item, index) => (
+                  <motion.div
+                    key={item.metric}
+                    className="space-y-2"
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
                     viewport={{ once: true }}
-                    className="bg-[#111] rounded-xl p-4 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
+                    transition={{ delay: 0.4 + index * 0.1 }}
+                    onMouseEnter={() => setHoveredMetric(item.metric)}
+                    onMouseLeave={() => setHoveredMetric(null)}
                   >
-                    <div className="text-xs text-[#888] uppercase tracking-wider font-mono mb-2">{m.label}</div>
-                    <div className="flex items-end justify-between">
-                      <div className="text-2xl font-light">{m.val}</div>
-                      <div className={`text-xs font-mono mb-1 ${m.ok ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {m.change}
+                    <div className="flex justify-between items-center">
+                      <span className={`font-mono text-sm uppercase tracking-wide transition-colors ${
+                        hoveredMetric === item.metric ? 'text-[#FAFAFA]' : 'text-[#71717A]'
+                      }`}>
+                        {item.metric}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-mono text-sm font-bold transition-colors ${
+                          hoveredMetric === item.metric ? 'text-[#FAFAFA]' :
+                            item.color === 'bg-red-500' ? 'text-red-400' : 'text-green-400'
+                        }`}>
+                          {item.score}
+                        </span>
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          item.color === 'bg-red-500' ? 'bg-red-950/40 text-red-400 border border-red-900' : 'bg-green-950/40 text-green-400 border border-green-900'
+                        }`}>
+                          {item.label}
+                        </span>
                       </div>
+                    </div>
+                    <div className="w-full h-2 bg-[#1A1A1E] rounded-full overflow-hidden">
+                      <motion.div
+                        className={`h-full ${item.color} rounded-full`}
+                        style={{ width: `${item.score * 100}%` }}
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${item.score * 100}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1.2, delay: 0.5 + index * 0.1 }}
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════ ARCHITECTURE SECTION ═══════════════════════ */}
+      <section id="architecture" className="py-28 px-6 bg-[#0A0A0B] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: 'radial-gradient(circle, rgba(139,92,246,0.3) 1px, transparent 1px)',
+          backgroundSize: '24px 24px'
+        }} />
+
+        <div className="max-w-5xl mx-auto relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 bg-cyan-950/30 border border-cyan-800/40 text-cyan-300 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+            >
+              <Target size={14} /> System Design
+            </motion.div>
+            <h2 className="font-bold text-[#FAFAFA] text-5xl mb-6">
+              Architecture
+            </h2>
+            <p className="text-[#A1A1AA] text-xl max-w-2xl mx-auto">
+              Two services. Three API pools. One serverless database. Zero vendor lock-in.
+            </p>
+          </motion.div>
+
+          {/* Architecture Diagram */}
+          <div className="space-y-6">
+            {/* Layer 1: Frontend */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-violet-950/10 border border-violet-900/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-3 h-3 rounded-full bg-violet-500 animate-pulse" />
+                <span className="font-mono text-violet-400 text-sm font-semibold">NEXT.JS 16 — Frontend + API Routes + Prisma ORM</span>
+                <span className="font-mono text-[#52525B] text-xs ml-auto">localhost:3000</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {architectureNodes.frontend.map((node, i) => (
+                  <motion.div
+                    key={node.label}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 + i * 0.1 }}
+                    whileHover={{ scale: 1.05, borderColor: '#8B5CF6' }}
+                    className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-xl p-4 text-center transition-all duration-200"
+                  >
+                    <div className="text-2xl mb-2">{node.icon}</div>
+                    <div className="text-[#A1A1AA] text-sm font-medium">{node.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Arrow */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="flex justify-center"
+            >
+              <div className="flex flex-col items-center gap-1">
+                <motion.div
+                  className="w-0.5 h-8 bg-gradient-to-b from-violet-500 to-cyan-500"
+                  initial={{ scaleY: 0 }}
+                  whileInView={{ scaleY: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4 }}
+                />
+                <span className="text-[#52525B] text-xs font-mono">HTTP (Axios)</span>
+                <motion.div
+                  className="w-0.5 h-8 bg-gradient-to-b from-cyan-500 to-emerald-500"
+                  initial={{ scaleY: 0 }}
+                  whileInView={{ scaleY: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.5 }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Layer 2: Engine */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-emerald-950/10 border border-emerald-900/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-mono text-emerald-400 text-sm font-semibold">PYTHON EVAL ENGINE — FastAPI + LangGraph</span>
+                <span className="font-mono text-[#52525B] text-xs ml-auto">localhost:3001</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {architectureNodes.engine.map((node, i) => (
+                  <motion.div
+                    key={node.label}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.4 + i * 0.1 }}
+                    whileHover={{ scale: 1.03, borderColor: '#10B981' }}
+                    className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-xl p-5 transition-all duration-200"
+                  >
+                    <div className="text-[#FAFAFA] text-base font-semibold mb-1">{node.label}</div>
+                    <div className="text-[#52525B] text-sm font-mono">{node.sub}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Arrow */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="flex justify-center"
+            >
+              <motion.div
+                className="w-0.5 h-10 bg-gradient-to-b from-emerald-500 to-cyan-500"
+                initial={{ scaleY: 0 }}
+                whileInView={{ scaleY: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.6 }}
+              />
+            </motion.div>
+
+            {/* Layer 3: Infrastructure */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {architectureNodes.infra.map((node, i) => (
+                <motion.div
+                  key={node.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.7 + i * 0.15 }}
+                  whileHover={{ scale: 1.05, boxShadow: `0 0 30px ${node.color}20` }}
+                  className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-2xl p-6 text-center transition-all duration-300"
+                >
+                  <div className="w-4 h-4 rounded-full mx-auto mb-4" style={{ backgroundColor: node.color, boxShadow: `0 0 20px ${node.color}60` }} />
+                  <div className="text-[#FAFAFA] text-base font-semibold mb-1">{node.label}</div>
+                  <div className="text-[#52525B] text-sm font-mono">{node.sub}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════ TECH STACK SECTION ═══════════════════════ */}
+      <section id="techstack" className="py-28 px-6 bg-[#020203] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.04)_0%,transparent_60%)]" />
+
+        <div className="max-w-4xl mx-auto relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 bg-violet-950/30 border border-violet-800/40 text-violet-300 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+            >
+              <Zap size={14} /> Powered By
+            </motion.div>
+            <h2 className="font-bold text-[#FAFAFA] text-5xl mb-6">
+              Built With
+            </h2>
+            <p className="text-[#A1A1AA] text-lg max-w-xl mx-auto">
+              Production-grade stack. Every tool chosen for a reason.
+            </p>
+          </motion.div>
+
+          {/* Logo Grid */}
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-5">
+            {techStack.map((tech, index) => (
+              <motion.div
+                key={tech.name}
+                initial={{ opacity: 0, scale: 0.7 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.06, type: "spring", stiffness: 200 }}
+                whileHover={{
+                  scale: 1.1,
+                  borderColor: '#8B5CF6',
+                  boxShadow: '0 0 30px rgba(139,92,246,0.2)',
+                  backgroundColor: 'rgba(139,92,246,0.05)'
+                }}
+                className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-2xl p-6 flex items-center justify-center aspect-square transition-all duration-300 cursor-default group"
+              >
+                <div className="opacity-70 group-hover:opacity-100 transition-opacity duration-300">
+                  <tech.Logo />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════ WHY THIS MATTERS ═══════════════════════ */}
+      <section className="py-24 px-6 bg-[#0A0A0B]">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-20"
+          >
+            <h2 className="font-bold text-[#FAFAFA] text-5xl mb-6">
+              Why this matters
+            </h2>
+            <p className="text-[#A1A1AA] text-xl max-w-2xl mx-auto">
+              The difference between silent failures and continuous confidence.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {/* Without Veridian */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <motion.div
+                className="absolute inset-0 bg-red-500/10 rounded-3xl blur-xl"
+                animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+              <div className="relative bg-red-950/20 border border-red-900/40 rounded-3xl p-10">
+                <h3 className="font-semibold text-red-400 text-2xl mb-8">Without Veridian</h3>
+                <div className="space-y-6">
+                  {[
+                    "No evaluation framework",
+                    "Silent regressions in production",
+                    "User complaints drive detection",
+                    "Manual audit processes",
+                    "Compliance risks"
+                  ].map((item, index) => (
+                    <motion.div
+                      key={item}
+                      className="flex items-center gap-4"
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.1 * index }}
+                    >
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 + index * 0.1 }}>
+                        <X size={24} className="text-red-400" />
+                      </motion.div>
+                      <span className="text-[#A1A1AA] text-lg">{item}</span>
+                    </motion.div>
+                  ))}
+                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.6 }}
+                  className="mt-8 inline-flex items-center gap-2 bg-red-950/40 border border-red-900 px-4 py-2 rounded-full"
+                >
+                  <AlertTriangle size={16} className="text-red-400" />
+                  <span className="text-red-400 font-mono text-sm">HIGH RISK</span>
+                </motion.div>
+              </div>
+            </motion.div>
+
+            {/* With Veridian */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <motion.div
+                className="absolute inset-0 bg-green-500/10 rounded-3xl blur-xl"
+                animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+              <div className="relative bg-green-950/20 border border-green-900/40 rounded-3xl p-10">
+                <h3 className="font-semibold text-green-400 text-2xl mb-8">With Veridian</h3>
+                <div className="space-y-6">
+                  {[
+                    "Continuous automated evaluation",
+                    "Instant regression alerts",
+                    "Proactive quality monitoring",
+                    "Automated audit trails",
+                    "DPDP compliance ready"
+                  ].map((item, index) => (
+                    <motion.div
+                      key={item}
+                      className="flex items-center gap-4"
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.1 * index }}
+                    >
+                      <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.2 + index * 0.1, type: "spring" }}>
+                        <CheckCircle size={24} className="text-green-400" />
+                      </motion.div>
+                      <span className="text-[#A1A1AA] text-lg">{item}</span>
+                    </motion.div>
+                  ))}
+                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.6 }}
+                  className="mt-8 inline-flex items-center gap-2 bg-green-950/40 border border-green-900 px-4 py-2 rounded-full"
+                >
+                  <Shield size={16} className="text-green-400" />
+                  <span className="text-green-400 font-mono text-sm">PROTECTED</span>
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════ COMPLIANCE SECTION ═══════════════════════ */}
+      <section className="py-24 px-6 bg-[#020203]">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-20"
+          >
+            <h2 className="font-bold text-[#FAFAFA] text-5xl mb-6">
+              Audit Ready
+            </h2>
+            <p className="text-[#A1A1AA] text-xl max-w-2xl mx-auto">
+              Complete traceability and explainability for every evaluation. One-click PDF reports.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Left - PDF Preview */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-3xl p-10 relative overflow-hidden">
+                <motion.div
+                  className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-transparent via-violet-400 to-transparent"
+                  animate={{ y: [0, 400, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                  style={{ filter: 'blur(1px)' }}
+                />
+                <div className="relative z-10">
+                  <div className="bg-[#0A0A0B] border border-[#1A1A1E] rounded-2xl p-8 relative">
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        {[4, 5, 3.5, 5, 3, 5, 2.5].map((w, i) => (
+                          <div key={i} className="h-3 bg-[#1A1A1E] rounded" style={{ width: `${w * 20}%` }} />
+                        ))}
+                      </div>
+                      <motion.div
+                        initial={{ rotate: -15, opacity: 0 }}
+                        whileInView={{ rotate: -5, opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ type: "spring", damping: 10 }}
+                        className="absolute top-4 right-4 bg-red-950/60 border border-red-900 text-red-400 font-mono font-bold px-4 py-2 rounded-lg shadow-lg"
+                      >
+                        AUDIT READY
+                      </motion.div>
+                    </div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.3 }}
+                      className="mt-8 p-6 bg-violet-950/20 border border-violet-900 rounded-2xl"
+                    >
+                      <div className="flex items-center gap-3 text-violet-400 font-mono text-base mb-3">
+                        <FileText size={20} />
+                        <span>COMPLIANCE REPORT</span>
+                      </div>
+                      <div className="text-[#A1A1AA] text-sm space-y-1">
+                        <div>Full metric breakdown with judge reasoning</div>
+                        <div>Per-test-case pass/fail with explanations</div>
+                        <div>Model version & timestamps logged</div>
+                        <div>DPDP compliant format</div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="font-semibold text-[#FAFAFA] text-3xl mb-10">
+                Complete compliance documentation
+              </h3>
+              <div className="space-y-8">
+                {[
+                  { icon: Shield, title: "Traceability", description: "Every evaluation logged with timestamps, model versions, and test case details.", delay: 0.1 },
+                  { icon: BarChart3, title: "Metric Reasoning", description: "The judge explains WHY it scored each metric — not just a number.", delay: 0.2 },
+                  { icon: FileText, title: "Explainability", description: "Full audit trail from input to output with intermediate steps documented.", delay: 0.3 }
+                ].map((item) => (
+                  <motion.div
+                    key={item.title}
+                    className="flex gap-6"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: item.delay }}
+                    whileHover={{ x: 10 }}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ duration: 0.2 }}
+                      className="w-16 h-16 bg-violet-950/20 border border-violet-900 rounded-2xl flex items-center justify-center shrink-0"
+                    >
+                      <item.icon size={28} className="text-violet-400" />
+                    </motion.div>
+                    <div>
+                      <h4 className="font-semibold text-[#FAFAFA] text-xl mb-3">{item.title}</h4>
+                      <p className="text-[#A1A1AA] text-lg leading-relaxed">{item.description}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
 
-            </div>
+              {/* Only DPDP badge — the only real one */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 }}
+                className="mt-12 inline-flex items-center gap-2 bg-[#0A0A0B] border border-[#1A1A1E] px-5 py-2.5 rounded-full font-mono text-sm text-violet-400"
+              >
+                <Shield size={14} /> DPDP Compliance Ready
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER - Minimal, Linear style */}
-      <footer className="border-t border-white/10 bg-black pt-16 pb-8 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-white/10 pb-8 mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Logo className="w-6 h-6 shrink-0" />
-              <span className="font-semibold text-lg tracking-tight">Veridian</span>
-            </div>
-            <p className="text-[#666] text-sm">The truth layer for enterprise AI.</p>
-          </div>
-          
-          <div className="flex gap-4 sm:gap-8">
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-semibold text-white tracking-wider uppercase mb-1">Product</span>
-              <a href="#" className="text-sm text-[#888] hover:text-white transition-colors">Features</a>
-              <a href="#" className="text-sm text-[#888] hover:text-white transition-colors">Pricing</a>
-              <a href="#" className="text-sm text-[#888] hover:text-white transition-colors">Docs</a>
-            </div>
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-semibold text-white tracking-wider uppercase mb-1">Company</span>
-              <a href="#" className="text-sm text-[#888] hover:text-white transition-colors">About</a>
-              <a href="#" className="text-sm text-[#888] hover:text-white transition-colors">Blog</a>
-              <a href="#" className="text-sm text-[#888] hover:text-white transition-colors">Contact</a>
-            </div>
-          </div>
+      {/* ═══════════════════════ FINAL CTA ═══════════════════════ */}
+      <section className="py-32 px-6 bg-linear-to-b from-[#0A0A0B] to-[#020203] text-center relative overflow-hidden">
+        <motion.div
+          className="absolute inset-0"
+          animate={{
+            background: [
+              "radial-gradient(circle at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 50%)",
+              "radial-gradient(circle at 50% 50%, rgba(139,92,246,0.15) 0%, transparent 60%)",
+              "radial-gradient(circle at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 50%)"
+            ]
+          }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        <div className="max-w-4xl mx-auto relative z-10">
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-bold text-[#FAFAFA] text-6xl mb-8"
+            style={{ textShadow: "0 0 60px rgba(139,92,246,0.3)" }}
+          >
+            Stop shipping blind.
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-[#A1A1AA] text-xl max-w-2xl mx-auto mb-12 leading-relaxed"
+          >
+            Every model update is a risk. Veridian catches regressions before your users do — autonomously, with full explainability.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(139,92,246,0.6)" }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/dashboard')}
+              className="bg-linear-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white px-12 py-5 text-xl font-bold rounded-2xl transition-all duration-300 shadow-xl border border-transparent"
+            >
+              Open Dashboard →
+            </motion.button>
+          </motion.div>
+
+          {/* Impact Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="mt-16 flex flex-wrap justify-center gap-10"
+          >
+            {[
+              { stat: "$67.4B", desc: "problem space" },
+              { stat: "21×", desc: "faster red team" },
+              { stat: "0", desc: "humans needed" },
+            ].map((item, index) => (
+              <motion.div
+                key={item.stat}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 + index * 0.1 }}
+                className="text-center"
+              >
+                <div className="text-2xl font-bold font-mono text-violet-400">{item.stat}</div>
+                <div className="text-[#52525B] text-sm">{item.desc}</div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
-        
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#555]">
-          <div>© 2026 Veridian HQ. All rights reserved.</div>
-          <div className="flex gap-4">
-             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-             <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+      </section>
+
+      {/* ═══════════════════════ FOOTER ═══════════════════════ */}
+      <footer className="border-t border-[#1A1A1E] py-10 px-6 bg-[#020203]">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+              <div className="font-bold text-[#FAFAFA] text-lg mb-1">Veridian</div>
+              <p className="text-[#52525B] text-sm">
+                The truth layer for enterprise AI.
+              </p>
+            </div>
+            <div className="text-center sm:text-right">
+              <div className="text-[#52525B] text-sm mb-1">
+                Team Cipher · TechnoTarang 2026
+              </div>
+              <div className="flex gap-4 text-xs text-[#3F3F46] font-mono justify-center sm:justify-end">
+                <span>Next.js 16</span>
+                <span>·</span>
+                <span>FastAPI</span>
+                <span>·</span>
+                <span>LangGraph</span>
+                <span>·</span>
+                <span>Groq</span>
+                <span>·</span>
+                <span>Neon</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
-
-      {/* Global simple keyframes for local component usage */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes bg-pan {
-          from { background-position: 0% center; }
-          to { background-position: -200% center; }
-        }
-      `}} />
     </div>
   );
 }

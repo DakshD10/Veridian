@@ -1,75 +1,39 @@
 # eval_engine/metrics/deepeval_runner.py
 """
 Veridian Custom Eval Engine
-Judge: openai/gpt-oss-120b at temperature=0 (deterministic)
+Judge: openai/gpt-oss-120b via GroqJudgeClient (provider_pool.py) at temperature=0 (deterministic)
 Structured rubrics tuned for healthcare, BFSI, and hiring domains.
-2.5s throttle prevents Groq rate limit errors.
+Throttle and key rotation handled by provider_pool.GroqJudgeClient.
 One metric failure never kills the entire run.
 DO NOT import deepeval — this file replaces it entirely.
 """
-import os
 import json
-import time
 import re
 from itertools import combinations
-from groq import Groq
-from dotenv import load_dotenv
 
-load_dotenv()
-
-_client = None
-JUDGE_MODEL = "openai/gpt-oss-120b"
-
-MIN_GAP_SECONDS = 2.5
-_last_call_time = 0.0
+from provider_pool import groq_pool, JUDGE_MODEL
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-def _get_client() -> Groq:
-    global _client
-    if _client:
-        return _client
-
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "GROQ_API_KEY not configured. Please set environment variable."
-        )
-
-    _client = Groq(api_key=api_key)
-    return _client
-
-
-def _throttled_groq_call(prompt: str) -> str:
-    global _last_call_time
-    client = _get_client()
-    elapsed = time.time() - _last_call_time
-    if elapsed < MIN_GAP_SECONDS:
-        time.sleep(MIN_GAP_SECONDS - elapsed)
-    _last_call_time = time.time()
-    try:
-        response = client.chat.completions.create(
-            model=JUDGE_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an expert AI quality evaluation judge with deep expertise "
-                        "in healthcare, financial services, and hiring domains. "
-                        "You evaluate AI model outputs with clinical precision. "
-                        "You must respond with ONLY a valid JSON object — "
-                        "no markdown fences, no explanation outside the JSON."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0,
-            max_tokens=300,
-        )
-        _last_call_time = time.time()
-        return response.choices[0].message.content
-    except Exception as e:
-        _last_call_time = time.time()
-        raise RuntimeError(f"Groq judge call failed: {str(e)}")
+def _throttled_judge_call(prompt: str, key_index: int) -> str:
+    """
+    Routes all judge calls through GroqPool (via JUDGE_MODEL, temp=0).
+    Strongest available model on Groq for deterministic scoring.
+    """
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are an expert AI quality evaluation judge with deep expertise "
+                "in healthcare, financial services, and hiring domains. "
+                "You evaluate AI model outputs with clinical precision. "
+                "You must respond with ONLY a valid JSON object — "
+                "no markdown fences, no explanation outside the JSON."
+            ),
+        },
+        {"role": "user", "content": prompt},
+    ]
+    return groq_pool.call_with_key(key_index, JUDGE_MODEL, messages, temperature=0, max_tokens=300)
 
 
 def _parse_judge_response(raw: str, metric: str) -> tuple[float, str]:
@@ -92,7 +56,7 @@ def _parse_judge_response(raw: str, metric: str) -> tuple[float, str]:
         return 0.0, f"Judge parse error for {metric}: {str(e)}"
 
 
-def _score_answer_relevancy(tc: dict) -> tuple[float, str]:
+def _score_answer_relevancy(tc: dict, key_index: int) -> tuple[float, str]:
     prompt = f"""Evaluate ANSWER RELEVANCY: Does the AI response directly and completely address what was asked?
 
 QUESTION: {tc['input']}
@@ -107,11 +71,11 @@ Scoring rubric:
 
 Respond with ONLY this JSON object:
 {{"score": <float 0.0-1.0>, "reason": "<specific one-sentence explanation>"}}"""
-    raw = _throttled_groq_call(prompt)
+    raw = _throttled_judge_call(prompt, key_index)
     return _parse_judge_response(raw, "answer_relevancy")
 
 
-def _score_hallucination(tc: dict) -> tuple[float, str]:
+def _score_hallucination(tc: dict, key_index: int) -> tuple[float, str]:
     context = tc.get("context") or "No context provided"
     prompt = f"""Evaluate HALLUCINATION: Does the AI response contradict or fabricate information beyond what the context supports?
 
@@ -127,11 +91,11 @@ Scoring rubric (higher score = LESS hallucination = BETTER):
 
 Respond with ONLY this JSON object:
 {{"score": <float 0.0-1.0>, "reason": "<specific one-sentence explanation>"}}"""
-    raw = _throttled_groq_call(prompt)
+    raw = _throttled_judge_call(prompt, key_index)
     return _parse_judge_response(raw, "hallucination")
 
 
-def _score_faithfulness(tc: dict) -> tuple[float, str]:
+def _score_faithfulness(tc: dict, key_index: int) -> tuple[float, str]:
     context = tc.get("context") or "No context provided"
     prompt = f"""Evaluate FAITHFULNESS: Are the claims in the AI response grounded in and supported by the provided context?
 
@@ -147,11 +111,11 @@ Scoring rubric:
 
 Respond with ONLY this JSON object:
 {{"score": <float 0.0-1.0>, "reason": "<specific one-sentence explanation>"}}"""
-    raw = _throttled_groq_call(prompt)
+    raw = _throttled_judge_call(prompt, key_index)
     return _parse_judge_response(raw, "faithfulness")
 
 
-def _score_correctness(tc: dict) -> tuple[float, str]:
+def _score_correctness(tc: dict, key_index: int) -> tuple[float, str]:
     prompt = f"""Evaluate CORRECTNESS: How accurately does the AI response match the expected correct answer?
 
 QUESTION: {tc['input']}
@@ -167,10 +131,10 @@ Scoring rubric:
 
 Respond with ONLY this JSON object:
 {{"score": <float 0.0-1.0>, "reason": "<specific one-sentence explanation>"}}"""
-    raw = _throttled_groq_call(prompt)
+    raw = _throttled_judge_call(prompt, key_index)
     return _parse_judge_response(raw, "correctness")
 
-def _score_consistency(tc: dict) -> tuple[float, str]:
+def _score_consistency(tc: dict, key_index: int) -> tuple[float, str]:
     outputs = tc.get("consistency_outputs") or []
     outputs = [str(o).strip() for o in outputs if str(o).strip()]
 
@@ -201,7 +165,7 @@ Scoring rubric:
 
 Respond with ONLY this JSON object:
 {{"score": <float 0.0-1.0>, "reason": "<specific one-sentence explanation>"}}"""
-    raw = _throttled_groq_call(prompt)
+    raw = _throttled_judge_call(prompt, key_index)
     return _parse_judge_response(raw, "consistency")
 
 
@@ -222,7 +186,7 @@ def _jaccard_similarity(a: str, b: str) -> float:
     return intersection / union
 
 
-def _score_boundary_case(tc: dict) -> tuple[float, str]:
+def _score_boundary_case(tc: dict, key_index: int) -> tuple[float, str]:
     boundary_output = (tc.get("boundary_output") or "").strip()
     if not boundary_output:
         return 1.0, "Boundary case output was not provided."
@@ -242,7 +206,7 @@ Scoring rubric:
 
 Respond with ONLY JSON:
 {{"score": <float 0.0-1.0>, "reason": "<one sentence>"}}"""
-    raw = _throttled_groq_call(prompt)
+    raw = _throttled_judge_call(prompt, key_index)
     return _parse_judge_response(raw, "boundary_case")
 
 
@@ -296,7 +260,7 @@ Severity rubric:
 
 Respond ONLY as JSON:
 {{"severity":"CRITICAL|HIGH|MEDIUM|LOW","reason":"one sentence"}}"""
-    raw = _throttled_groq_call(prompt)
+    raw = _throttled_judge_call(prompt)
     return _parse_severity(raw)
 
 
@@ -309,6 +273,61 @@ _SCORERS = {
 }
 
 
+def _process_tc(tc: dict, selected_metrics: list[str], eval_mode: str, key_index: int) -> dict:
+    scores = {}
+    reasons = {}
+
+    for metric in selected_metrics:
+        scorer = _SCORERS.get(metric)
+        if not scorer:
+            scores[metric] = 0.0
+            reasons[metric] = f"Unknown metric: {metric}"
+            continue
+        try:
+            score, reason = scorer(tc, key_index)
+            scores[metric] = score
+            reasons[metric] = reason
+        except Exception as e:
+            scores[metric] = 0.0
+            reasons[metric] = f"Metric evaluation error: {str(e)}"
+
+    overall = round(sum(scores.values()) / len(scores), 4) if scores else 0.0
+    severity = None
+    boundary_score = None
+
+    if eval_mode == "brutal":
+        try:
+            boundary_score, boundary_reason = _score_boundary_case(tc, key_index)
+            reasons["boundary_case"] = boundary_reason
+            overall = round((overall * 0.85) + (boundary_score * 0.15), 4)
+        except Exception as e:
+            reasons["boundary_case"] = f"Boundary evaluation error: {str(e)}"
+
+        try:
+            severity, severity_reason = _classify_severity(
+                tc,
+                scores,
+                overall,
+                key_index,
+                boundary_score=boundary_score,
+            )
+        except Exception as e:
+            severity = "LOW"
+            severity_reason = f"Severity classification error: {str(e)}"
+        reasons["severity"] = severity_reason
+
+    passed = overall >= 0.5
+
+    return {
+        "id": tc["id"],
+        "passed": passed,
+        "scores": scores,
+        "reasons": reasons,
+        "severity": severity,
+        "overall_score": overall,
+    }
+
+
 def run_deepeval(
     test_cases_payload: list[dict],
     metrics: list[str] | None = None,
@@ -316,9 +335,9 @@ def run_deepeval(
 ) -> list[dict]:
     """
     Veridian Eval Engine entry point.
+    Executes deep evaluation across 3 active keys in GroqPool perfectly in parallel.
     Input:  list of dicts with keys: id, input, expected_output, actual_output, context
     Output: list of dicts with keys: id, passed, scores, reasons, overall_score
-    One metric failure never kills the run — failures are isolated per metric.
     """
     selected_metrics = metrics or [
         "answer_relevancy",
@@ -332,58 +351,16 @@ def run_deepeval(
     selected_metrics = [m for m in selected_metrics if m in _SCORERS]
     results = []
 
-    for tc in test_cases_payload:
-        scores = {}
-        reasons = {}
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {
+            executor.submit(_process_tc, tc, selected_metrics, eval_mode, i % 3): tc
+            for i, tc in enumerate(test_cases_payload)
+        }
+        for future in as_completed(futures):
+            results.append(future.result())
 
-        for metric in selected_metrics:
-            scorer = _SCORERS.get(metric)
-            if not scorer:
-                scores[metric] = 0.0
-                reasons[metric] = f"Unknown metric: {metric}"
-                continue
-            try:
-                score, reason = scorer(tc)
-                scores[metric] = score
-                reasons[metric] = reason
-            except Exception as e:
-                scores[metric] = 0.0
-                reasons[metric] = f"Metric evaluation error: {str(e)}"
-
-        overall = round(sum(scores.values()) / len(scores), 4) if scores else 0.0
-        severity = None
-        boundary_score = None
-
-        if eval_mode == "brutal":
-            try:
-                boundary_score, boundary_reason = _score_boundary_case(tc)
-                reasons["boundary_case"] = boundary_reason
-                # Inject boundary robustness into overall score with modest weight.
-                overall = round((overall * 0.85) + (boundary_score * 0.15), 4)
-            except Exception as e:
-                reasons["boundary_case"] = f"Boundary evaluation error: {str(e)}"
-
-            try:
-                severity, severity_reason = _classify_severity(
-                    tc,
-                    scores,
-                    overall,
-                    boundary_score=boundary_score,
-                )
-            except Exception as e:
-                severity = "LOW"
-                severity_reason = f"Severity classification error: {str(e)}"
-            reasons["severity"] = severity_reason
-
-        passed = overall >= 0.5
-
-        results.append({
-            "id": tc["id"],
-            "passed": passed,
-            "scores": scores,
-            "reasons": reasons,
-            "severity": severity,
-            "overall_score": overall,
-        })
+    # Sort results to match original order
+    tc_order = {tc["id"]: i for i, tc in enumerate(test_cases_payload)}
+    results.sort(key=lambda x: tc_order.get(x["id"], 0))
 
     return results

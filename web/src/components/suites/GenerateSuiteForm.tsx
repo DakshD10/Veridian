@@ -59,6 +59,7 @@ export function GenerateSuiteForm() {
     defaultValues: { description: "", domain: "" },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const description = watch("description");
 
   const generateMutation = useMutation({
