@@ -15,29 +15,4 @@ __pycache__
 .env.production.local   
 .vercel
 .cursorrules
-.cursor
-.cursorignore
-.cursorignore.md
-.cursorignore.txt
-.cursorignore.yml
-.cursorignore.yaml
-.cursorignore.json
-.cursorignore.jsonc
-.cursorignore.json5
-.cursorignore.jsonp
-.cursorignore.js
-.cursorignore.jsx
-.cursorignore.ts
-.cursorignore.tsx
-.cursorignore.vue
-.cursorignore.svelte
-.cursorignore.astro
-.cursorignore.mdx
-.cursorignore.mdx
-.cursorignore.mdx
 
-.gitignore
-.gitignore/*
-    !.gitignore
-    !.gitignore/*
-        !.gitignore
