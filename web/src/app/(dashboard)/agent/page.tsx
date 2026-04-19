@@ -10,7 +10,6 @@ import { LiveTimer } from "@/components/agent/LiveTimer";
 import { useAgentRunPolling } from "@/hooks/useAgentRunPolling";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AgentMetricsPanel } from "@/components/agent/AgentMetricsPanel";
-import { PageLayout } from "@/components/layout/PageLayout";
 import { RootCauseCard } from "@/components/agent/RootCauseCard";
 
 // Add CSS for regression pulse animation
@@ -46,6 +45,69 @@ function toRunStatus(status: string): "PENDING" | "RUNNING" | "COMPLETED" | "FAI
   if (normalized === "COMPLETED") return "COMPLETED";
   if (normalized === "FAILED" || normalized === "ERROR") return "FAILED";
   return "PENDING";
+}
+
+function AgentPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#0A0A0D] w-full">
+      <div className="sticky top-0 z-50 h-14 bg-[#0A0A0D]/95 backdrop-blur-md border-b border-[#1A1A1E] flex items-center justify-between px-6">
+        <Skeleton className="h-3 w-44 bg-[#121215]/60 rounded" />
+        <Skeleton className="h-6 w-72 bg-[#121215]/60 rounded-full" />
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-14 bg-[#121215]/60 rounded" />
+          <Skeleton className="h-6 w-24 bg-[#121215]/60 rounded-full" />
+          <Skeleton className="h-7 w-24 bg-[#121215]/60 rounded" />
+        </div>
+      </div>
+
+      <div className="bg-[#0A0A0D] border-b border-[#1A1A1E] py-5 px-6">
+        <div className="max-w-[1100px] mx-auto flex">
+          <div className="flex flex-col gap-2 px-8">
+            <Skeleton className="h-2.5 w-20 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-8 w-20 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-2.5 w-14 bg-[#121215]/60 rounded" />
+          </div>
+          <div className="w-px bg-[#1A1A1E]" />
+          <div className="flex flex-col gap-2 px-8">
+            <Skeleton className="h-2.5 w-16 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-8 w-20 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-2.5 w-24 bg-[#121215]/60 rounded" />
+          </div>
+          <div className="w-px bg-[#1A1A1E]" />
+          <div className="flex flex-col gap-2 px-8">
+            <Skeleton className="h-2.5 w-12 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-8 w-16 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-2.5 w-20 bg-[#121215]/60 rounded" />
+          </div>
+          <div className="w-px bg-[#1A1A1E]" />
+          <div className="flex flex-col gap-2 px-8">
+            <Skeleton className="h-2.5 w-16 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-8 w-16 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-2.5 w-24 bg-[#121215]/60 rounded" />
+          </div>
+          <div className="w-px bg-[#1A1A1E]" />
+          <div className="flex flex-col gap-2 px-8">
+            <Skeleton className="h-2.5 w-16 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-8 w-20 bg-[#121215]/60 rounded" />
+            <Skeleton className="h-5 w-16 bg-[#121215]/60 rounded" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[1fr_340px] gap-5 pt-6 pb-16 max-w-[1100px] mx-auto px-6">
+        <div>
+          <Skeleton className="h-3 w-28 bg-[#121215]/60 rounded mb-4" />
+          <Skeleton className="h-[120px] w-full bg-[#121215]/50 rounded-xl mb-4" />
+          <Skeleton className="h-[120px] w-full bg-[#121215]/50 rounded-xl mb-4" />
+          <Skeleton className="h-[120px] w-full bg-[#121215]/50 rounded-xl" />
+        </div>
+        <div>
+          <Skeleton className="h-3 w-24 bg-[#121215]/60 rounded mb-4" />
+          <Skeleton className="h-[300px] w-full bg-[#121215]/50 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function AgentContent() {
@@ -142,21 +204,7 @@ function AgentContent() {
   };
 
   if (listLoading || (activeRunId && runLoading)) {
-    return (
-      <div className="flex flex-col min-h-screen bg-[#0A0A0D] w-full">
-        <Skeleton className="h-56 w-full bg-[#121215]/50" />
-        <div className="max-w-[1100px] mx-auto px-6 py-5">
-          <div className="flex gap-5">
-            <div className="flex-1">
-              <Skeleton className="h-[400px] w-full bg-[#121215]/50 rounded-xl" />
-            </div>
-            <div className="w-[340px]">
-              <Skeleton className="h-[400px] w-full bg-[#121215]/50 rounded-xl" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <AgentPageSkeleton />;
   }
 
   if (listError || runError) {
@@ -420,18 +468,7 @@ export default function AgentPage() {
   return (
     <Suspense
       fallback={
-        <PageLayout title="Agent">
-          <div className="max-w-[1100px] mx-auto">
-            <div className="flex gap-5">
-              <div className="flex-1">
-                <Skeleton className="h-[400px] w-full bg-[#121215]/50 rounded-xl" />
-              </div>
-              <div className="w-[340px]">
-                <Skeleton className="h-[400px] w-full bg-[#121215]/50 rounded-xl" />
-              </div>
-            </div>
-          </div>
-        </PageLayout>
+        <AgentPageSkeleton />
       }
     >
       <AgentContent />

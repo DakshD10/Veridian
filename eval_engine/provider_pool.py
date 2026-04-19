@@ -63,19 +63,52 @@ class GroqPool:
         )
         return resp.choices[0].message.content
 
+    @staticmethod
+    def _is_rate_limited_error(err: Exception) -> bool:
+        """Best-effort detection for provider-side throttling/rate-limit failures."""
+        text = str(err).lower()
+        return (
+            "rate limit" in text
+            or "rate_limit" in text
+            or "too many requests" in text
+            or "429" in text
+        )
+
     def call_with_key(self, key_index: int, model: str, messages: list,
                       temperature: float = 0.1, max_tokens: int = 1024) -> str:
         """
         Pinned-key call for parallel workers (Red Team / Eval Evals).
         Worker manages its own timing. Ensures 3 concurrent threads can hit 3 unique accounts.
         """
-        if key_index >= len(self._clients):
-            raise ValueError(f"key_index {key_index} out of range for GroqPool")
-        print(f"[GroqPool] parallel model={model} key={key_index}")
-        resp = self._clients[key_index].chat.completions.create(
-            model=model, messages=messages, temperature=temperature, max_tokens=max_tokens
-        )
-        return resp.choices[0].message.content
+        if not self._clients:
+            raise RuntimeError("No Groq clients configured")
+
+        # Normalize requested key index for pools smaller than the caller's expected size.
+        start_idx = key_index % len(self._clients)
+        order = [start_idx] + [i for i in range(len(self._clients)) if i != start_idx]
+
+        last_error = None
+        for attempt, idx in enumerate(order, start=1):
+            try:
+                print(f"[GroqPool] parallel model={model} key={idx} attempt={attempt}")
+                resp = self._clients[idx].chat.completions.create(
+                    model=model, messages=messages, temperature=temperature, max_tokens=max_tokens
+                )
+                return resp.choices[0].message.content
+            except Exception as e:
+                last_error = e
+                is_rate = self._is_rate_limited_error(e)
+                has_more = attempt < len(order)
+                if has_more and is_rate:
+                    print(f"[GroqPool] key={idx} rate-limited; retrying on another key")
+                    time.sleep(min(0.4 * attempt, 1.2))
+                    continue
+                if has_more:
+                    print(f"[GroqPool] key={idx} failed ({e}); trying next key")
+                    continue
+                break
+
+        raise last_error if last_error else RuntimeError("Groq call failed without exception")
 
 
 class GeminiPool:

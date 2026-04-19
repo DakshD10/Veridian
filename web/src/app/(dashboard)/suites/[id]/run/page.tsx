@@ -177,7 +177,7 @@ export default function RunEvalSuitePage() {
               </div>
               <div className="py-3 flex justify-between items-center">
                 <span className="font-sans text-[13px] text-[#52525B]">Judge</span>
-                <span className="font-mono text-[14px] font-medium text-[#71717A]">GPT OSS 120B</span>
+                <span className="font-mono text-[14px] font-medium text-[#71717A]">Llama 3.3 70B</span>
               </div>
             </div>
 

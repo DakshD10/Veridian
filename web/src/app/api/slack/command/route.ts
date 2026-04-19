@@ -4,6 +4,8 @@ import {
   verifySlackSignature,
   parseSlashCommand,
   sendSlackText,
+  sendSlackMessage,
+  buildDeploymentPickerBlocks,
 } from "@/services/slack.service";
 import { triggerAgentRun } from "@/services/agent.service";
 
@@ -25,8 +27,8 @@ export async function POST(req: NextRequest) {
 
   if (subcommand === "check") {
     immediateResponse = args
-      ? `Running Veridian eval on *${args}*... I'll post results here when done.`
-      : "Please provide a deployment name. Example: `/veridian check triage-ai`";
+      ? `Preparing eval run for *${args}* in a thread...`
+      : "Opening deployment picker in a thread...";
   } else if (subcommand === "status") {
     immediateResponse = "Fetching deployment status...";
   } else if (subcommand === "help") {
@@ -41,6 +43,44 @@ export async function POST(req: NextRequest) {
 
   setImmediate(async () => {
     try {
+      if (subcommand === "check" && !args) {
+        const deployments = await prisma.watchedDeployment.findMany({
+          where: { isActive: true },
+          select: { id: true, name: true },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        });
+
+        if (deployments.length === 0) {
+          await sendSlackText(channelId, "No active deployments found to check.");
+          return;
+        }
+
+        const parent = await sendSlackText(
+          channelId,
+          `🧵 <@${userId}> requested deployment check. Continue in thread.`
+        );
+
+        const threadTs = parent.ts;
+        if (!threadTs) {
+          await sendSlackText(
+            channelId,
+            "Failed to open thread. Please try again in a moment."
+          );
+          return;
+        }
+
+        await sendSlackMessage(
+          channelId,
+          buildDeploymentPickerBlocks(deployments, userId),
+          {
+            text: "Pick a deployment to run an evaluation",
+            threadTs,
+          }
+        );
+        return;
+      }
+
       if (subcommand === "check" && args) {
         const deployment = await prisma.watchedDeployment.findFirst({
           where: {
@@ -57,18 +97,35 @@ export async function POST(req: NextRequest) {
           return;
         }
 
+        const parent = await sendSlackText(
+          channelId,
+          `🧵 <@${userId}> requested eval for *${deployment.name}*. Updates in thread.`
+        );
+
+        const threadTs = parent.ts;
         await prisma.watchedDeployment.update({
           where: { id: deployment.id },
           data: { slackChannelId: channelId },
         });
 
+        if (threadTs) {
+          await sendSlackText(
+            channelId,
+            `Running Veridian eval on *${deployment.name}*... I'll post results here when done.`,
+            { threadTs }
+          );
+        }
+
         await triggerAgentRun(
           deployment.id,
           deployment.currentModel,
-          `Slack command from ${userId}`,
+          `Slack command from ${userId} in ${channelId}${threadTs ? ` [thread_ts:${threadTs}]` : ""}`,
           "slack"
         );
-      } else if (subcommand === "status") {
+        return;
+      }
+
+      if (subcommand === "status") {
         const deployments = await prisma.watchedDeployment.findMany({
           where: { isActive: true },
           include: {
@@ -106,7 +163,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({
-    response_type: "in_channel",
+    response_type: "ephemeral",
     text: immediateResponse,
   });
 }

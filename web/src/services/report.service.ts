@@ -18,6 +18,88 @@ type RedTeamFinding = {
   original_test_case_id?: string;
 };
 
+const MAX_SUMMARY_CHARS = 6000;
+const MAX_FINDING_DESCRIPTION_CHARS = 500;
+const MAX_FINDING_IO_CHARS = 700;
+const MAX_ATTACK_TYPE_CHARS = 120;
+const MAX_RENDERED_FINDINGS = 24;
+
+function normalizeText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value == null) return "";
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function sanitizeForPdf(value: unknown, maxChars = 2000): string {
+  const normalized = normalizeText(value)
+    .normalize("NFKD")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ")
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g, "")
+    .replace(/[\u2028\u2029]/g, "\n")
+    .replace(/\u202F/g, " ")
+    .replace(/\u00A0/g, " ")
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+
+  // Prevent pathological unbroken tokens from destabilizing text layout.
+  const withBreaks = normalized.replace(/(\S{120})(?=\S)/g, "$1 ");
+  if (withBreaks.length <= maxChars) return withBreaks;
+  return `${withBreaks.slice(0, maxChars).trimEnd()}... [truncated]`;
+}
+
+function normalizeSeverity(value: unknown): RedTeamFinding["severity"] {
+  const severity = normalizeText(value).toUpperCase();
+  if (severity === "CRITICAL") return "CRITICAL";
+  if (severity === "HIGH") return "HIGH";
+  if (severity === "MEDIUM") return "MEDIUM";
+  return "LOW";
+}
+
+function normalizeFinding(raw: unknown, index: number): RedTeamFinding {
+  const source = (typeof raw === "object" && raw !== null
+    ? (raw as Record<string, unknown>)
+    : {}) as Record<string, unknown>;
+
+  const attackType = sanitizeForPdf(
+    source.attack_type ?? source.attackType,
+    MAX_ATTACK_TYPE_CHARS
+  );
+  const description = sanitizeForPdf(
+    source.description,
+    MAX_FINDING_DESCRIPTION_CHARS
+  );
+  const input = sanitizeForPdf(source.input, MAX_FINDING_IO_CHARS);
+  const output = sanitizeForPdf(source.output, MAX_FINDING_IO_CHARS);
+  const originalTestCaseId = sanitizeForPdf(
+    source.original_test_case_id ?? source.originalTestCaseId,
+    120
+  );
+
+  return {
+    attack_type: attackType || `unspecified_attack_${index + 1}`,
+    severity: normalizeSeverity(source.severity),
+    description,
+    input: input || undefined,
+    output: output || undefined,
+    original_test_case_id: originalTestCaseId || undefined,
+  };
+}
+
 const palette = {
   pageBg: "#F8FAFC",
   cardBg: "#FFFFFF",
@@ -334,9 +416,10 @@ function formatPercent(value: number | null | undefined, digits = 1): string {
   return `${(value * 100).toFixed(digits)}%`;
 }
 
-function cleanReportText(text: string | null | undefined): string {
-  if (!text) return "";
-  return text
+function cleanReportText(text: unknown, maxChars = MAX_SUMMARY_CHARS): string {
+  const normalized = sanitizeForPdf(text, maxChars);
+  if (!normalized) return "";
+  return normalized
     .replace(/^#{1,6}\s*/gm, "")
     .replace(/\*\*(.*?)\*\*/g, "$1")
     .replace(/`([^`]+)`/g, "$1")
@@ -383,9 +466,11 @@ export async function generateRedTeamReport(
     timeStyle: "short",
   });
 
-  const findings = (
-    Array.isArray(redTeamRun.findings) ? redTeamRun.findings : []
-  ) as RedTeamFinding[];
+  const findings = Array.isArray(redTeamRun.findings)
+    ? redTeamRun.findings.map((finding, index) => normalizeFinding(finding, index))
+    : [];
+  const findingsToRender = findings.slice(0, MAX_RENDERED_FINDINGS);
+  const omittedFindings = findings.length - findingsToRender.length;
 
   const successRate =
     redTeamRun.attacksGenerated > 0
@@ -521,12 +606,17 @@ export async function generateRedTeamReport(
         createElement(
           Text,
           { style: styles.sectionTitle },
-          `DETAILED FINDINGS (${findings.length})`
+          `DETAILED FINDINGS (${findingsToRender.length} shown / ${findings.length} total)`
         ),
-        ...(findings.length > 0
-          ? findings.map((finding, index: number) => {
+        ...(findingsToRender.length > 0
+          ? findingsToRender.map((finding, index: number) => {
+              const safeAttackType = sanitizeForPdf(
+                finding.attack_type,
+                MAX_ATTACK_TYPE_CHARS
+              );
               const title = `${index + 1}. ${
-                finding.attack_type?.replace(/_/g, " ").toUpperCase() || "UNSPECIFIED ATTACK"
+                safeAttackType.replace(/_/g, " ").toUpperCase() ||
+                "UNSPECIFIED ATTACK"
               }`;
               return createElement(
                 View,
@@ -575,6 +665,18 @@ export async function generateRedTeamReport(
                 )
               ),
             ])
+        ,
+        omittedFindings > 0
+          ? createElement(
+              View,
+              { key: "omitted-findings-note", style: styles.card },
+              createElement(
+                Text,
+                { style: styles.mutedText },
+                `Only the first ${MAX_RENDERED_FINDINGS} findings are shown in this PDF for stability. ${omittedFindings} additional findings are available in the run details.`
+              )
+            )
+          : null
       ),
 
       createElement(

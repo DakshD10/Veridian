@@ -2,16 +2,20 @@ import time
 from datetime import datetime, timezone
 
 from agent.state import WatcherState
-from provider_pool import groq_pool, gemini_pool
-import threading
+from provider_pool import groq_pool
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Gemini model IDs — extend this list if new Gemini models are added
-GEMINI_MODEL_PREFIXES = ("gemini-",)
-
-
-def _is_gemini_model(model_id: str) -> bool:
-    return any(model_id.startswith(prefix) for prefix in GEMINI_MODEL_PREFIXES)
+SUPPORTED_EVAL_MODELS = {
+    "llama-3.1-8b-instant",
+    "llama-3.3-70b-versatile",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "meta-llama/llama-prompt-guard-2-22m",
+    "meta-llama/llama-prompt-guard-2-86m",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-safeguard-20b",
+    "qwen/qwen3-32b",
+}
 
 
 def _evaluate_worker(tc: dict, model_id: str, key_index: int) -> dict:
@@ -27,10 +31,13 @@ def _evaluate_worker(tc: dict, model_id: str, key_index: int) -> dict:
 
     start = time.time()
     try:
-        if _is_gemini_model(model_id):
-            output = gemini_pool.run_model(model_id, messages, temperature=0.1)
-        else:
-            output = groq_pool.call_with_key(key_index, model_id, messages, temperature=0.1, max_tokens=1024)
+        output = groq_pool.call_with_key(
+            key_index,
+            model_id,
+            messages,
+            temperature=0.1,
+            max_tokens=1024,
+        )
 
         latency_ms = int((time.time() - start) * 1000)
         return {
@@ -48,11 +55,17 @@ def _evaluate_worker(tc: dict, model_id: str, key_index: int) -> dict:
 def invoke(state: WatcherState) -> WatcherState:
     """
     Node 3: Run each test case through the selected model.
-    Routes between Groq and Gemini based on model ID prefix.
+    Restricts execution to supported Groq models only.
     Parallel execution across 3 GroqPool keys via ThreadPoolExecutor.
     Stores { id, actual_output, latency_ms } per test case.
     """
     model_id = state["new_model_id"]
+    if model_id not in SUPPORTED_EVAL_MODELS:
+        allowed = ", ".join(sorted(SUPPORTED_EVAL_MODELS))
+        raise ValueError(
+            f"Unsupported model_id '{model_id}' for eval run. Supported models: {allowed}"
+        )
+
     test_cases = state["eval_suite"]["test_cases"]
     results = []
 

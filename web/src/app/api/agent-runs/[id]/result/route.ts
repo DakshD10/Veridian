@@ -4,6 +4,7 @@ import { z } from "zod";
 
 const ResultSchema = z.object({
   agent_run_id:     z.string(),
+  new_model_id:     z.string().optional(),
   new_score:        z.number(),
   previous_score:   z.number(),
   regression_found: z.boolean(),
@@ -11,6 +12,7 @@ const ResultSchema = z.object({
   report_summary:   z.string(),
   root_cause:       z.string().optional(),
   agent_trace:      z.array(z.any()),
+  test_results:     z.array(z.any()).optional(),
   scored_results:   z.array(z.any()),
 });
 

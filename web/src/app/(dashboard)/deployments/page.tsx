@@ -5,6 +5,28 @@ import { DeploymentCard } from "@/components/deployments/DeploymentCard";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function DeploymentsPageSkeleton() {
+  return (
+    <PageLayout
+      title="Watched Deployments"
+      subtitle="Loading deployment data..."
+      stats={[
+        { label: "TOTAL DEPLOYMENTS", value: "--" },
+        { label: "ACTIVE", value: "--" },
+        { label: "PAUSED", value: "--" },
+        { label: "SYSTEM STATUS", value: "Checking..." },
+      ]}
+    >
+      <div className="flex flex-col w-full gap-3">
+        <Skeleton className="h-[116px] w-full bg-[#121215]/50 rounded-lg" />
+        <Skeleton className="h-[116px] w-full bg-[#121215]/50 rounded-lg" />
+        <Skeleton className="h-[116px] w-full bg-[#121215]/50 rounded-lg" />
+      </div>
+    </PageLayout>
+  );
+}
 
 export default function DeploymentsPage() {
   const { data, isLoading, isError } = useDeployments();
@@ -19,7 +41,7 @@ export default function DeploymentsPage() {
     ? { label: "Checking...",    color: "#F59E0B" }
     : { label: "System Healthy", color: "#22C55E" };
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading deployments...</div>;
+  if (isLoading) return <DeploymentsPageSkeleton />;
   if (isError) return <div className="p-8 text-center text-destructive">Failed to load deployments.</div>;
 
   return (
