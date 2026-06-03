@@ -1,11 +1,6 @@
 # VERIDIAN — AI Rules & Instructions
 
-### Paste this at the top of EVERY prompt you give to Codex, Cursor, or Windsurf.
-
-### These rules prevent hallucination, garbage imports, and broken patterns.
-
 ---
-
 ## PRIME DIRECTIVE
 
 You are building **Veridian** — an AI evaluation and regression testing platform.
