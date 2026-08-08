@@ -78,7 +78,7 @@ django                    → wrong framework entirely
 
 ```typescript
 // CORRECT — always import from this exact path
-import { prisma } from "@/lib/prisma";
+import {prisma} from "@/lib/prisma";
 
 // WRONG — never do any of these
 import { PrismaClient } from "@prisma/client"; // never instantiate directly
