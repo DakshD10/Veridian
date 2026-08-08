@@ -4,7 +4,7 @@ Last updated: TechnoTarang 2026 migration (DeepSeek removed)
 
 Three completely isolated Groq accounts:
   groq_runner_pool   → GROQ_API_KEY_1 + GROQ_API_KEY_2  (eval runs, red team execute)
-  groq_judge_client  → GROQ_JUDGE_MODEL key              (gpt-oss-120b, temp=0, scoring + red team gen/analyze)
+  groq_judge_client  → GROQ_JUDGE_MODEL key              (Llama 3.3 70B, temp=0, scoring + red team gen/analyze)
   gemini_pool        → GEMINI_API_KEY_1 + GEMINI_API_KEY_2 (suite gen + report writing ONLY)
 
 DeepSeek REMOVED. openai SDK REMOVED. All LLM calls go through groq SDK or google-generativeai only.

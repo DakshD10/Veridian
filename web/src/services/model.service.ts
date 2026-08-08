@@ -40,6 +40,8 @@ const SUPPORTED_GROQ_EVAL_MODELS = new Set([
   "openai/gpt-oss-20b",
   "openai/gpt-oss-safeguard-20b",
   "qwen/qwen3-32b",
+  "qwen/qwen3.6-27b",
+  "minimaxai/minimax-m2.7",
 ]);
 
 function selectGroqKeyIndex(): number {
@@ -183,6 +185,8 @@ export async function getAvailableModels() {
     { id: "openai/gpt-oss-20b",                      label: "GPT OSS 20B",               speed: "very fast", provider: "groq" },
     { id: "openai/gpt-oss-safeguard-20b",            label: "Safety GPT OSS 20B",        speed: "very fast", provider: "groq" },
     { id: "qwen/qwen3-32b",                          label: "Qwen3 32B",                  speed: "fast",      provider: "groq" },
+    { id: "qwen/qwen3.6-27b",                        label: "Qwen/Qwen3.6-27B",           speed: "fast",      provider: "groq" },
+    { id: "minimaxai/minimax-m2.7",                  label: "MiniMax M2.7 Enterprise",    speed: "fast",      provider: "groq" },
   ];
 
   // Fetch active custom providers from DB

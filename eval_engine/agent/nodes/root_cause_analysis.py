@@ -2,8 +2,7 @@ import json
 from datetime import datetime, timezone
 from agent.state import WatcherState
 from models.groq_client import call_groq
-
-JUDGE_MODEL = "llama-3.3-70b-versatile"
+from provider_pool import JUDGE_MODEL
 
 
 def _throttled_groq_call(prompt: str) -> str:

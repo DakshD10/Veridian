@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Ignore all files in the .gitignore directory
 .gitignore/*
+!.env.example
+!web/.env.example
+!eval_engine/.env.example

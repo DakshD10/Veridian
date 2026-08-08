@@ -15,4 +15,6 @@ __pycache__
 .env.production.local   
 .vercel
 .cursorrules
-
+!.env.example
+!web/.env.example
+!eval_engine/.env.example
