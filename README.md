@@ -135,7 +135,7 @@ flowchart TB
     API --> Telegram
 ```
 
-### Agent callback flow
+### Agent callback flows
 
 Long-running agents are **async by design** — the web app never blocks on agent completion:
 
