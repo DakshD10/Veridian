@@ -31,3 +31,4 @@ REMEDIATION.md
 
 web/src/services/report.service.ts.old
 AI_RULES.md
+.env.*
